@@ -1,0 +1,22 @@
+/**** Start of imports. If edited, may not auto-convert in the playground. ****/
+var srtm = ee.Image("USGS/SRTMGL1_003");
+/***** End of imports. If edited, may not auto-convert in the playground. *****/
+// Import NASA SRTM Digital Elevation Data to console
+print(srtm)
+
+// Add the SRTM data to the interactive map
+Map.addLayer(srtm);
+
+// SRTM data, but with restricted value ranges for better visualization 
+Map.addLayer(srtm, {min: 0, max: 400});
+
+// Data with value ranges and a title for the Layer tab
+Map.addLayer(srtm, {min: 0, max: 400}, 'Elevation above sea level');
+
+// Changing color map and the minimum/maximum range of elevation
+Map.addLayer(srtm, {min: 0, max: 400, palette: ['blue', 'yellow', 'red']}, 'Elevation above sea level (RYB - Max: 400)'); 
+Map.addLayer(srtm, {min: 0, max: 2000, palette: ['blue', 'yellow', 'red']}, 'Elevation above sea level (RYB - Max: 2000)'); 
+
+// Changing elevation value ranges to visualize where the tallest mountains are in the world
+Map.addLayer(srtm, {min: 0, max: 8000, palette: ['blue', 'yellow', 'red']}, 'Elevation above sea level (RYB - Max: 8000');
+

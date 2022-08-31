@@ -1,0 +1,39 @@
+print('Hello World')
+
+//This is a comment
+/* I am writing several lines of comments,
+I am writing another line of comments,
+I am almost done with my comments,
+I am done with the comments. */
+
+var my_variable = 30;
+
+var my_string_variable = 'This is a string';
+
+var my_other_string_variable = 'This is another string';
+
+print('Print this string in the Console tab.');
+
+var my_list = ['soccer', 'football', 'rugby', 'tennis']; //This is container
+print(my_list[0]);
+print(my_list[3]);
+//print(my_list[4]);
+
+var joined_text = 'remote' + 'sensing'
+print(joined_text)
+var joined_text = 'remote' + 'sensing'
+print(joined_text)
+
+// Complex Container
+var my_dict = {'college': 'OU', 'color': 'crimson', 'number': my_variable};
+// Square brackets can be used to access dictionary items by key.
+print(my_dict['color']);
+// Or you can use the dot notation to get the same result.
+print(my_dict.color);
+print(my_dict.number);
+
+var my_hello_function = function(my_input){ 
+  return 'Hello ' + my_input + '!';}; 
+// Apply this function 
+print(my_hello_function('World')); 
+
