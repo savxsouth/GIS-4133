@@ -1,0 +1,55 @@
+/**** Start of imports. If edited, may not auto-convert in the playground. ****/
+var point = /* color: #d63000 */ee.Geometry.Point([-97.48712570188535, 35.33942321959788]),
+    landsat8 = ee.ImageCollection("LANDSAT/LC08/C01/T1");
+/***** End of imports. If edited, may not auto-convert in the playground. *****/
+var image = ee.Image(landsat8
+ 
+// Filter to show images that cover the location of the selected point (Moore, OK). 
+  .filterBounds(point) 
+ 
+// Date Filter to get only images in the specified range. 
+  .filterDate('2020-01-01', '2022-12-31') 
+ 
+// Sort the Metadata by CLOUD COVER. 
+  .sort('CLOUD_COVER') 
+  
+// Show the first image of the collection, which will have minimum 
+// cloud presence among all available within the specified dates.
+  .first());
+  
+// Print the image to the console. 
+print('Selected Landsat Scene:', image); 
+
+// Define visualization parameters. 
+var true_color = { 
+  bands: ['B4', 'B3', 'B2'], 
+  min: 4000, 
+  max: 12000 
+};
+
+// Add the image to the map including the set parameters above. 
+Map.addLayer(image, true_color, 'true-color image'); 
+
+// Define parameters for FCC visualization. 
+var false_color = { 
+  bands: ['B5', 'B4', 'B3'], 
+  min: 4000, 
+  max: 13000 
+}; 
+
+// Add the image to the map, using the visualization parameters. 
+Map.addLayer(image, false_color, 'false-color composite');
+
+// Bands used to derive radiance.
+var bands = ['B1', 'B2', 'B3', 'B4', 'B5', 'B6', 'B7', 'B10', 
+'B11']; 
+ 
+// Subset the image with bands in interests.  
+var DN_image = image.select(bands); 
+ 
+// Now apply the transformation...
+var radiance = ee.Algorithms.Landsat.calibratedRadiance(DN_image); 
+ 
+// Display the result.
+var radParams = {bands: ['B4', 'B3', 'B2'], min: 0, max: 100}; 
+Map.addLayer(radiance, radParams, 'radiance'); 
