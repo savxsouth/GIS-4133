@@ -1,0 +1,222 @@
+/**** Start of imports. If edited, may not auto-convert in the playground. ****/
+var point = 
+    /* color: #ff0000 */
+    /* locked: true */
+    ee.Geometry.Point([-97.5956425417823, 35.56787299786179]),
+    landsat8_toa = ee.ImageCollection("LANDSAT/LC08/C02/T1_TOA"),
+    landsat8_sr = ee.ImageCollection("LANDSAT/LC08/C02/T1_L2"),
+    water = 
+    /* color: #fff543 */
+    /* locked: true */
+    /* displayProperties: [
+      {
+        "type": "rectangle"
+      }
+    ] */
+    ee.Feature(
+        ee.Geometry.Polygon(
+            [[[-97.68549240403829, 35.50423443643475],
+              [-97.68549240403829, 35.493822772335704],
+              [-97.67072952562032, 35.493822772335704],
+              [-97.67072952562032, 35.50423443643475]]], null, false),
+        {
+          "label": "water",
+          "system:index": "0"
+        }),
+    vegetation = 
+    /* color: #00ff00 */
+    /* locked: true */
+    /* displayProperties: [
+      {
+        "type": "rectangle"
+      }
+    ] */
+    ee.Feature(
+        ee.Geometry.Polygon(
+            [[[-97.7093917967555, 35.483279819928825],
+              [-97.7093917967555, 35.481724738201066],
+              [-97.7079326750514, 35.481724738201066],
+              [-97.7079326750514, 35.483279819928825]]], null, false),
+        {
+          "label": "vegetation",
+          "system:index": "0"
+        }),
+    soil = 
+    /* color: #0000ff */
+    /* locked: true */
+    /* displayProperties: [
+      {
+        "type": "rectangle"
+      }
+    ] */
+    ee.Feature(
+        ee.Geometry.Polygon(
+            [[[-97.6619433651581, 35.528793893305],
+              [-97.6619433651581, 35.52716110866708],
+              [-97.66070418459321, 35.52716110866708],
+              [-97.66070418459321, 35.528793893305]]], null, false),
+        {
+          "label": "soil",
+          "system:index": "0"
+        }),
+    cloud = 
+    /* color: #ff08ad */
+    /* locked: true */
+    /* displayProperties: [
+      {
+        "type": "rectangle"
+      }
+    ] */
+    ee.Feature(
+        ee.Geometry.Polygon(
+            [[[-97.56073210282449, 35.51464717045039],
+              [-97.56073210282449, 35.50849896012462],
+              [-97.55317900223855, 35.50849896012462],
+              [-97.55317900223855, 35.51464717045039]]], null, false),
+        {
+          "label": "cloud",
+          "system:index": "0"
+        }),
+    urban = 
+    /* color: #009999 */
+    /* locked: true */
+    /* displayProperties: [
+      {
+        "type": "rectangle"
+      }
+    ] */
+    ee.Feature(
+        ee.Geometry.Polygon(
+            [[[-97.59151014342591, 35.4697152459367],
+              [-97.59151014342591, 35.468282233340105],
+              [-97.58784088149353, 35.468282233340105],
+              [-97.58784088149353, 35.4697152459367]]], null, false),
+        {
+          "label": "urban",
+          "system:index": "0"
+        });
+/***** End of imports. If edited, may not auto-convert in the playground. *****/
+// Get the first TOA image out of the TOA collection, with
+// minimum cloud cover within the specified dates
+var image_toa = ee.Image(landsat8_toa
+  .filterBounds(point)
+  .filterDate('2016-06-01', '2016-08-31')
+  .sort('CLOUD_COVER')
+  .first());
+print('Landsat TOA image:',image_toa);
+
+//Get the first SR image out of the SR collection, with
+// minimum cloud cover within the specified dates
+var image_sr = ee.Image(landsat8_sr
+  .filterBounds(point)
+  .filterDate('2016-06-01', '2016-08-31')
+  .sort('CLOUD_COVER')
+  .first());
+print('Landsat SR image:',image_sr)
+
+//Apply the scale factor to the SR image
+var image_sr_scaled = image_sr.multiply(2.75e-05).subtract(0.2);
+
+// subset spectral bands and multiply by 100 to derive percent reflectance
+var refbands_toa = image_toa.select('B[1-7]').multiply(100);
+var refbands_sr = image_sr_scaled.select('SR_B[1-7]').multiply(100);
+
+// Define true-color visualization parameters for TOA image.
+var trueColor_toa = {
+  bands: ['B4', 'B3', 'B2'],
+  min:0,
+  max: 60
+};
+Map.addLayer(refbands_toa, trueColor_toa, 'true-color composite TOA');
+
+// Define true-color visualization parameters for SR image.
+var trueColor_sr = {
+  bands: ['SR_B4', 'SR_B3', 'SR_B2'],
+  min: 0,
+  max: 60
+};
+Map.addLayer(refbands_sr, trueColor_sr, 'true-color composite SR');
+
+// Code to display images in False Color Composite
+var FCC_toa = {
+  bands: ['B5', 'B4', 'B3'],
+  min:0,
+  max: 60
+};
+Map.addLayer(refbands_toa, FCC_toa, 'false-color composite TOA');
+
+var FCC_sr = {
+  bands: ['SR_B5', 'SR_B4', 'SR_B3'],
+  min: 0,
+  max: 60
+};
+Map.addLayer(refbands_sr, FCC_sr, 'false-color composite SR');
+
+var studyregions= ee.FeatureCollection([water,vegetation,urban,soil,
+cloud]);
+print(['studyregions:', studyregions]);
+
+// Create the scatter chart
+var Chart1 = ui.Chart.image.regions(
+refbands_toa, studyregions, ee.Reducer.mean(), 20, 'label')
+.setChartType('ScatterChart');
+print(Chart1);
+
+// Define customization options.
+var plotOptions = {
+title: 'Landsat-8 TOA reflectance spectral curves',
+hAxis: {title: 'Wavelength (μm)'},
+vAxis: {title: 'TOA Reflectance (%)'},
+lineWidth: 2,
+pointSize: 5,
+series: {
+0: {color: 'blue'}, // water
+1: {color: 'green'}, // vegetation
+2: {color: 'red'}, // urban
+3: {color: 'purple'}, // soil
+4: {color: 'cyan'}, // cloud
+}};
+
+// Define a list of Landsat-8 wavelengths for X-axis labels.
+var wavelengths = [0.44, 0.48, 0.56, 0.65, 0.86, 1.61, 2.2];
+
+// Create the chart and set options.
+var Chart2 = ui.Chart.image.regions(
+refbands_toa, studyregions, ee.Reducer.mean(), 10, 'label', wavelengths)
+.setChartType('ScatterChart')
+.setOptions(plotOptions);
+// Display the chart.
+print(Chart2);
+
+// Create the scatter chart
+var Chart3 = ui.Chart.image.regions(
+    refbands_toa, studyregions, ee.Reducer.mean(), 20, 'label')
+        .setChartType('ScatterChart');
+print(Chart3);
+
+// Define customization options.
+var plotOptions = {
+  title: 'Landsat-8 surface reflectance spectral curves',
+  hAxis: {title: 'Wavelength (μm)'},
+  vAxis: {title: 'Surface Reflectance (%)'},
+  lineWidth: 2,
+  pointSize: 5,
+  series: {
+    0: {color: 'blue'}, // water
+    1: {color: 'green'}, // vegetation
+    2: {color: 'red'}, // urban
+    3: {color: 'purple'}, // soil
+    4: {color: 'cyan'}, // cloud
+}};
+
+// Define a list of Landsat-8 wavelengths for X-axis labels.
+var wavelengths = [0.44, 0.48, 0.56, 0.65, 0.86, 1.61, 2.2];
+
+// Create the chart and set options.
+var Chart4 = ui.Chart.image.regions(
+    refbands_sr, studyregions, ee.Reducer.mean(), 10, 'label', wavelengths)
+        .setChartType('ScatterChart')
+        .setOptions(plotOptions);
+// Display the chart.
+print(Chart4);
+

@@ -1,0 +1,144 @@
+/**** Start of imports. If edited, may not auto-convert in the playground. ****/
+var geometry = /* color: #d63000 */ee.Geometry.MultiPoint();
+/***** End of imports. If edited, may not auto-convert in the playground. *****/
+/////////////////////////////////////////////////////////////////////////////////////// Landsat 8 
+
+// this is our reference point
+var point = ee.Geometry.Point([-97.30586438080125, 35.26552420585232]);
+ 
+// select a pre-selected Landsat 8 level 2 collection 2 tier 1 SR image with some cloud
+var image_sr = ee.Image('LANDSAT/LC08/C02/T1_L2/LC08_027036_20160604');
+print('Landsat SR image:',image_sr);
+
+//subset spectral bands and apply the scale factor to the SR image
+refbands_sr = image_sr.select('SR_B[1-7]')
+var refbands_sr = refbands_sr.multiply(2.75e-05).subtract(0.2);
+
+//multiply by 100 to derive percent reflectance
+var refbands_sr = refbands_sr.multiply(100);
+ 
+// Define true-color visualization parameters for SR image.
+var trueColor_sr = {
+  bands: ['SR_B4', 'SR_B3', 'SR_B2'],
+  min: 0,
+  max: 30
+};
+Map.addLayer(refbands_sr, trueColor_sr, 'L8 true-color composite SR');
+
+// Quality assessment pixel values in decimals
+var qa_sr = image_sr.select('QA_PIXEL');
+Map.addLayer(qa_sr,{min: 0, max: 65535},'L8 QA_PIXEL');
+
+// Write a Function to mask clouds based on the QA_PIXEL band of Landsat 8 SR data.
+function maskL8sr(image) {
+  // Bits 3 and 4 are cloud and cloud shadow, respectively. SEE BANDS for reference
+  var cloudShadowBitMask = (1 << 3); //pushes "1" 3 spaces to the left 
+  var cloudsBitMask = (1 << 4);// pushes "1" 4 spaces to the left
+  
+  // Get the pixel QA band from the Landsat 8 collection level 2 SR image
+  var qa = image.select('QA_PIXEL');
+  // Set both flags to zero to indicate clear sky conditions.
+  var mask = qa.bitwiseAnd(cloudShadowBitMask).eq(0)
+                 .and(qa.bitwiseAnd(cloudsBitMask).eq(0));
+  return image.updateMask(mask);
+}
+
+// apply the cloud mask function to the SR image
+var cloud_freeimg = maskL8sr(image_sr);
+
+//subset spectral bands and apply the scale factor to the SR image
+cloud_freeimg = cloud_freeimg.select('SR_B[1-7]')
+var cloud_freeimg = cloud_freeimg.multiply(2.75e-05).subtract(0.2);
+//multiply by 100 to derive percent reflectance
+var cloud_freeimg = cloud_freeimg.multiply(100);
+print(cloud_freeimg)
+Map.centerObject(point,6)
+Map.addLayer(cloud_freeimg, trueColor_sr, 'L8 cloud masked true-color SR');
+
+// Create a cloud free Landsat 8 composite Map
+var collection = ee.ImageCollection('LANDSAT/LC08/C02/T1_L2')
+    .filterDate('2016-01-01', '2016-12-31')
+    .filterBounds(point)
+    .map(maskL8sr);
+
+var composite = collection.median()
+//subset spectral bands and apply the scale factor to the SR image
+cloud_freeimg = composite.select('SR_B[1-7]')
+var composite = composite.multiply(2.75e-05).subtract(0.2);
+//multiply by 100 to derive percent reflectance
+var composite = composite.multiply(100);
+
+print(composite)
+Map.centerObject(point,6)
+Map.addLayer(composite, trueColor_sr, 'L8 cloud masked true-color composite SR');
+
+/////////////////////////////////////////////////////////////////////////////////////// Landsat 7
+
+// this is our reference point
+var point = ee.Geometry.Point([-97.30586438080125, 35.26552420585232]);
+ 
+// select a pre-selected Landsat 7 level 2 collection 2 tier 1 SR image with some cloud
+var image_sr = ee.Image('LANDSAT/LE07/C02/T1_L2/LE07_027036_20160628');
+print('Landsat SR image:',image_sr);
+
+//subset spectral bands and apply the scale factor to the SR image
+refbands_sr = image_sr.select('SR_B[1-7]')
+var refbands_sr = refbands_sr.multiply(2.75e-05).subtract(0.2);
+
+//multiply by 100 to derive percent reflectance
+var refbands_sr = refbands_sr.multiply(100);
+ 
+// Define true-color visualization parameters for SR image.
+var trueColor_sr = {
+  bands: ['SR_B3', 'SR_B2', 'SR_B1'],
+  min: 0,
+  max: 30
+};
+Map.addLayer(refbands_sr, trueColor_sr, 'L7 true-color composite SR');
+
+// Quality assessment pixel values in decimals
+var qa_sr = image_sr.select('QA_PIXEL');
+Map.addLayer(qa_sr,{min: 0, max: 65535},'L7 QA_PIXEL');
+
+// Write a Function to mask clouds based on the QA_PIXEL band of Landsat 8 SR data.
+function maskL8sr(image) {
+  // Bits 3 and 4 are cloud and cloud shadow, respectively. SEE BANDS for reference
+  var cloudShadowBitMask = (1 << 3); //pushes "1" 3 spaces to the left 
+  var cloudsBitMask = (1 << 4);// pushes "1" 4 spaces to the left
+  
+  // Get the pixel QA band from the Landsat 8 collection level 2 SR image
+  var qa = image.select('QA_PIXEL');
+  // Set both flags to zero to indicate clear sky conditions.
+  var mask = qa.bitwiseAnd(cloudShadowBitMask).eq(0)
+                 .and(qa.bitwiseAnd(cloudsBitMask).eq(0));
+  return image.updateMask(mask);
+}
+
+// apply the cloud mask function to the SR image
+var cloud_freeimg = maskL8sr(image_sr);
+
+//subset spectral bands and apply the scale factor to the SR image
+cloud_freeimg = cloud_freeimg.select('SR_B[1-7]')
+var cloud_freeimg = cloud_freeimg.multiply(2.75e-05).subtract(0.2);
+//multiply by 100 to derive percent reflectance
+var cloud_freeimg = cloud_freeimg.multiply(100);
+print(cloud_freeimg)
+Map.centerObject(point,6)
+Map.addLayer(cloud_freeimg, trueColor_sr, 'L7 cloud masked true-color SR');
+
+// Create a cloud free Landsat 8 composite Map
+var collection = ee.ImageCollection('LANDSAT/LE07/C02/T1_L2')
+    .filterDate('2016-01-01', '2016-12-31')
+    .filterBounds(point)
+    .map(maskL8sr);
+
+var composite = collection.median()
+//subset spectral bands and apply the scale factor to the SR image
+cloud_freeimg = composite.select('SR_B[1-7]')
+var composite = composite.multiply(2.75e-05).subtract(0.2);
+//multiply by 100 to derive percent reflectance
+var composite = composite.multiply(100);
+
+print(composite)
+Map.centerObject(point,6)
+Map.addLayer(composite, trueColor_sr, 'L7 cloud masked true-color composite SR');

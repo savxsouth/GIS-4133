@@ -1,0 +1,305 @@
+/**** Start of imports. If edited, may not auto-convert in the playground. ****/
+var landsat1Collection = ee.ImageCollection("LANDSAT/LM01/C02/T1"),
+    landsat2Collection = ee.ImageCollection("LANDSAT/LM02/C02/T1"),
+    landsat3Collection = ee.ImageCollection("LANDSAT/LM03/C02/T1"),
+    landsat4Collection = ee.ImageCollection("LANDSAT/LT04/C02/T1"),
+    landsat5Collection = ee.ImageCollection("LANDSAT/LT05/C02/T1"),
+    landsat7Collection = ee.ImageCollection("LANDSAT/LE07/C02/T1"),
+    landsat8Collection = ee.ImageCollection("LANDSAT/LC08/C02/T1"),
+    landsat9Collection = ee.ImageCollection("LANDSAT/LC09/C02/T1");
+/***** End of imports. If edited, may not auto-convert in the playground. *****/
+//////////////////////////////////////////////////////////////////////// Landsat 1
+
+var BoundingBox = ee.Geometry.BBox(-103.14, 33.63, -93.99, 37.21);
+
+// Get the first scene within the bounding box with minimum cloud cover
+// within the specified dates
+var landsat1_image = ee.Image(landsat1Collection
+.filterBounds(BoundingBox)
+.filterDate('1972-01-01', '1976-12-31')
+.sort('CLOUD_COVER')
+.first());
+print('Landsat 1 image:',landsat1_image);
+
+// print Band names
+var bands = landsat1_image.bandNames();
+print('Bands of Landsat 1:', bands);
+
+// print spatial resolution
+var band_landsat1 = landsat1_image.select('B4');
+
+//select one band for reference
+var spatial_resolution = band_landsat1.projection().nominalScale();
+print('spatial Resolution of landsat1:', spatial_resolution);
+
+// select bands only
+var landsat1_image = landsat1_image.select('B4','B5','B6');
+
+// Define visualization parameters
+var VisualParm= {
+bands: ['B6', 'B5', 'B4'],
+min:0,
+max: 100
+};
+
+// add the map layer
+Map.addLayer(landsat1_image, VisualParm, 'Landsat1_B6B5B4');
+
+//////////////////////////////////////////////////////////////////////// Landsat 2
+
+var BoundingBox = ee.Geometry.BBox(-103.14, 33.63, -93.99, 37.21);
+
+// Get the first scene within the bounding box with minimum cloud cover
+// within the specified dates
+var landsat2_image = ee.Image(landsat2Collection
+.filterBounds(BoundingBox)
+.filterDate('1978-01-01', '1980-12-31')
+.sort('CLOUD_COVER')
+.first());
+print('Landsat 2 image:',landsat2_image);
+
+// print Band names
+var bands = landsat2_image.bandNames();
+print('Bands of Landsat 2:', bands);
+
+// print spatial resolution
+var band_landsat2 = landsat2_image.select('B4')
+
+//select one band for reference
+var spatial_resolution = band_landsat2.projection().nominalScale();
+print('spatial Resolution of landsat2:', spatial_resolution);
+
+// select bands only
+var landsat2_image = landsat2_image.select('B4','B5','B6');
+
+// Define visualization parameters
+var VisualParm= {
+bands: ['B6', 'B5', 'B4'],
+min:0,
+max: 100
+};
+
+// add the map layer
+Map.addLayer(landsat2_image, VisualParm, 'Landsat2_B6B5B4');
+
+//////////////////////////////////////////////////////////////////////// Landsat 3
+
+var BoundingBox = ee.Geometry.BBox(-103.14, 33.63, -93.99, 37.21);
+
+// Get the first scene within the bounding box with minimum cloud cover
+// within the specified dates
+var landsat3_image = ee.Image(landsat3Collection
+.filterBounds(BoundingBox)
+.filterDate('1978-01-01', '1983-12-31')
+.sort('CLOUD_COVER')
+.first());
+print('Landsat 3 image:',landsat3_image);
+
+// print Band names
+var bands = landsat3_image.bandNames();
+print('Bands of Landsat 3:', bands);
+
+// print spatial resolution
+var band_landsat3 = landsat3_image.select('B4')
+
+//select one band for reference
+var spatial_resolution = band_landsat3.projection().nominalScale();
+print('spatial Resolution of landsat3:', spatial_resolution);
+
+// select bands only
+var landsat3_image = landsat3_image.select('B4','B5','B6');
+
+// Define visualization parameters
+var VisualParm= {
+bands: ['B6', 'B5', 'B4'],
+min:0,
+max: 100
+};
+
+// add the map layer
+Map.addLayer(landsat3_image, VisualParm, 'Landsat3_B6B5B4');
+
+//////////////////////////////////////////////////////////////////////// Landsat 4
+
+var BoundingBox = ee.Geometry.BBox(-103.14, 33.63, -93.99, 37.21);
+
+// Get the first scene within the bounding box with minimum cloud cover
+// within the specified dates
+var landsat4_image = ee.Image(landsat4Collection
+.filterBounds(BoundingBox)
+.filterDate('1989-01-01','1989-01-31')
+.sort('CLOUD_COVER')
+.first());
+print('Landsat 4 image:',landsat4_image);
+
+// print Band names
+var bands = landsat4_image.bandNames();
+print('Bands of Landsat 4:', bands);
+
+// print spatial resolution
+var band_landsat4 = landsat4_image.select('B4')
+
+//select one band for reference
+var spatial_resolution = band_landsat4.projection().nominalScale();
+print('spatial Resolution of landsat4:', spatial_resolution);
+
+// select bands only
+var landsat4_image = landsat4_image.select('B3','B2','B1');
+
+// Define visualization parameters
+var VisualParm= {
+bands: ['B3', 'B2', 'B1'],
+min:0,
+max: 150
+};
+
+// add the map layer
+Map.addLayer(landsat4_image, VisualParm, 'Landsat4_B3B2B1');
+
+//////////////////////////////////////////////////////////////////////// Landsat 5
+
+var BoundingBox = ee.Geometry.BBox(-103.14, 33.63, -93.99, 37.21);
+
+// Get the first scene within the bounding box with minimum cloud cover
+// within the specified dates
+var landsat5_image = ee.Image(landsat5Collection
+.filterBounds(BoundingBox)
+.filterDate('1985-01-01', '1985-05-31')
+.sort('CLOUD_COVER')
+.first());
+print('Landsat 5 image:',landsat5_image);
+
+// print Band names
+var bands = landsat5_image.bandNames();
+print('Bands of Landsat 5:', bands);
+
+// print spatial resolution
+var band_landsat5 = landsat5_image.select('B4')
+
+//select one band for reference
+var spatial_resolution = band_landsat5.projection().nominalScale();
+print('spatial Resolution of landsat5:', spatial_resolution);
+
+// select bands only
+var landsat5_image = landsat5_image.select('B3','B2','B1');
+
+// Define visualization parameters
+var VisualParm= {
+bands: ['B3', 'B2', 'B1'],
+min:0,
+max: 150
+};
+
+// add the map layer
+Map.addLayer(landsat5_image, VisualParm, 'Landsat5_B3B2B1');
+
+//////////////////////////////////////////////////////////////////////// Landsat 7
+
+var BoundingBox = ee.Geometry.BBox(-103.14, 33.63, -93.99, 37.21);
+
+// Get the first scene within the bounding box with minimum cloud cover
+// within the specified dates
+var landsat7_image = ee.Image(landsat7Collection
+.filterBounds(BoundingBox)
+.filterDate('2004-01-01', '2017-12-31')
+.sort('CLOUD_COVER')
+.first());
+print('Landsat 7 image:',landsat7_image);
+
+// print Band names
+var bands = landsat7_image.bandNames();
+print('Bands of Landsat 7:', bands);
+
+// print spatial resolution
+var band_landsat7 = landsat7_image.select('B4')
+
+//select one band for reference
+var spatial_resolution = band_landsat7.projection().nominalScale();
+print('spatial Resolution of landsat7:', spatial_resolution);
+
+// select bands only
+var landsat7_image = landsat7_image.select('B3','B2','B1');
+
+// Define visualization parameters
+var VisualParm= {
+bands: ['B3', 'B2', 'B1'],
+min:0,
+max: 150
+};
+
+// add the map layer
+Map.addLayer(landsat7_image, VisualParm, 'Landsat7_B3B2B1');
+
+//////////////////////////////////////////////////////////////////////// Landsat 8
+
+var BoundingBox = ee.Geometry.BBox(-103.14, 33.63, -93.99, 37.21);
+
+// Get the first scene within the bounding box with minimum cloud cover
+// within the specified dates
+var landsat8_image = ee.Image(landsat8Collection
+.filterBounds(BoundingBox)
+.filterDate('2017-01-01', '2017-12-31') 
+.sort('CLOUD_COVER')
+.first());
+print('Landsat 8 image:',landsat8_image);
+
+// print Band names
+var bands = landsat8_image.bandNames();
+print('Bands of Landsat 8:', bands);
+
+// print spatial resolution
+var band_landsat8 = landsat8_image.select('B4')
+
+//select one band for reference
+var spatial_resolution = band_landsat8.projection().nominalScale();
+print('spatial Resolution of landsat8:', spatial_resolution);
+
+// select bands only
+var landsat8_image = landsat8_image.select('B4','B3','B2');
+
+// Define visualization parameters
+var VisualParm= {
+bands: ['B4', 'B3', 'B2'],
+min:4000,
+max:30000
+};
+
+// add the map layer
+Map.addLayer(landsat8_image, VisualParm, 'Landsat8_B4B3B2');
+
+//////////////////////////////////////////////////////////////////////// Landsat 9
+
+var BoundingBox = ee.Geometry.BBox(-103.14, 33.63, -93.99, 37.21);
+
+// Get the first scene within the bounding box with minimum cloud cover
+// within the specified dates
+var landsat9_image = ee.Image(landsat9Collection
+.filterBounds(BoundingBox)
+.filterDate('2022-03-01', '2022-05-31')
+.sort('CLOUD_COVER')
+.first());
+print('Landsat 9 image:',landsat9_image);
+
+// print Band names
+var bands = landsat9_image.bandNames();
+print('Bands of Landsat 9:', bands);
+
+// print spatial resolution
+var band_landsat9 = landsat9_image.select('B4')
+
+//select one band for reference
+var spatial_resolution = band_landsat9.projection().nominalScale();
+print('spatial Resolution of landsat9:', spatial_resolution);
+
+// select bands only
+var landsat9_image = landsat9_image.select('B4','B3','B2');
+
+// Define visualization parameters
+var VisualParm= {
+bands: ['B4', 'B3', 'B2'],
+min:4000,
+max:30000
+};
+
+// add the map layer
+Map.addLayer(landsat9_image, VisualParm, 'Landsat9_B4B3B2');
