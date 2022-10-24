@@ -1,0 +1,215 @@
+/**** Start of imports. If edited, may not auto-convert in the playground. ****/
+var geometry = ee.FeatureCollection("users/savsouthwardwx/HighPlainsaquifer"),
+    Crop_collection = ee.ImageCollection("USDA/NASS/CDL"),
+    s2_collection = ee.ImageCollection("COPERNICUS/S2_SR"),
+    cotton_field = 
+    /* color: #e4ff2f */
+    /* locked: true */
+    /* displayProperties: [
+      {
+        "type": "rectangle"
+      }
+    ] */
+    ee.Geometry.Polygon(
+        [[[-102.06600702532903, 33.42749901623303],
+          [-102.06600702532903, 33.41481907019362],
+          [-102.05223119982854, 33.41481907019362],
+          [-102.05223119982854, 33.42749901623303]]], null, false),
+    alfalfa_field = 
+    /* color: #6b9cff */
+    /* locked: true */
+    /* displayProperties: [
+      {
+        "type": "rectangle"
+      }
+    ] */
+    ee.Geometry.Polygon(
+        [[[-104.06924086301186, 41.88377472012835],
+          [-104.06924086301186, 41.88100295404062],
+          [-104.06253534047462, 41.88100295404062],
+          [-104.06253534047462, 41.88377472012835]]], null, false);
+/***** End of imports. If edited, may not auto-convert in the playground. *****/
+//////////////////////////////////////////////////////////////////////////////////////// 4.3
+
+// Write a function for Cloud masking in Sentinel-2 image
+function maskS2clouds(image) {
+  var qa = image.select('QA60')
+  var cloudBitMask = 1 << 10;
+  var cirrusBitMask = 1 << 11;
+  var mask = qa.bitwiseAnd(cloudBitMask).eq(0).and(
+             qa.bitwiseAnd(cirrusBitMask).eq(0))
+  return image.updateMask(mask).multiply(0.0001)
+  // 0.0001 is the scale factor to convert it to surface reflectance
+      .select("B.*") // only select Bands
+      .copyProperties(image, ["system:time_start"])
+}
+
+//////////////////////////////////////////////////////////////////////////////////////// 4.4
+
+// Write a function that computes NDVI and adds it as a band
+function addNDVI(img) {
+  var ndvi = img.normalizedDifference(['B8', 'B4']).rename('NDVI');
+  return img.addBands(ndvi);
+}
+
+//////////////////////////////////////////////////////////////////////////////////////// 4.5
+
+var addAlbedo = function(img){
+   var albedo = img.expression(
+  '(0.356 * BLUE + 0.130 * RED + 0.373 * NIR + 0.071 * SWIR1- 0.0018* SWIR2)/1.016', {
+    'BLUE': img.select('B2'),
+    'NIR': img.select('B4'),
+    'RED': img.select('B8'),
+    'SWIR1': img.select('B11'),
+    'SWIR2': img.select('B12')
+  }).rename('Albedo');
+  return img.addBands(albedo);
+};
+
+//////////////////////////////////////////////////////////////////////////////////////// 5.1
+
+var cropLandcover = ee.Image(Crop_collection
+        .filter(ee.Filter.date('2017-01-01', '2021-12-31'))
+                  .first());
+var cropLandcover = cropLandcover.select('cropland');
+var cropLandcover = cropLandcover.clip(geometry);
+
+Map.addLayer(cropLandcover, {}, 'Crop Landcover');
+
+//////////////////////////////////////////////////////////////////////////////////////// 5.2
+
+var cotton_mask = cropLandcover.eq(2);
+var cotton = cropLandcover.updateMask(cotton_mask);
+// print(cotton)
+
+//////////////////////////////////////////////////////////////////////////////////////// 5.3
+
+Map.addLayer(cotton, {}, 'Crop cotton');
+
+//////////////////////////////////////////////////////////////////////////////////////// 5.4
+
+// Make a polygon of a field.
+Map.addLayer(cotton_field, {color: 'red'}, 'Farm')
+Map.centerObject(cotton_field)
+
+//////////////////////////////////////////////////////////////////////////////////////// 6.1
+
+//Load the SENTINEL-2 collection and filter for specific periods, cloud threshold, and study region
+var s2_filtered = s2_collection
+  .filter(ee.Filter.date('2017-01-01', '2021-12-31'))
+  .filter(ee.Filter.bounds(cotton_field))
+  
+// mask out clouds across all images 
+var s2_filtered = s2_filtered.map(maskS2clouds)
+
+// display the cloud free sentinel-2 in true color composite
+var rgbVis = {
+  min: 0.0,
+  max: 0.3,
+  bands: ['B4', 'B3', 'B2'],
+};
+
+//Display the median value of all cloud free pixels
+Map.addLayer(s2_filtered.median(), rgbVis, 'RGB - Sentinel-2');
+
+//////////////////////////////////////////////////////////////////////////////////////// 6.2
+
+// Map the function over the collection- Add NDVI and Albedo images
+var s2_withNDVI = s2_filtered.map(addNDVI);
+var s2_withNDVIAlbedo = s2_withNDVI.map(addAlbedo);
+
+//////////////////////////////////////////////////////////////////////////////////////// 6.3
+
+// Display a time-series chart showing NDVI
+var chart_s2ndvi = ui.Chart.image.series({
+  imageCollection: s2_withNDVIAlbedo.select('NDVI'),
+  region: cotton_field,
+  reducer: ee.Reducer.mean(),
+  scale: 10
+}).setOptions({
+      lineWidth: 1,
+      title: 'NDVI Time Series - Sentinel-2',
+      interpolateNulls: true,
+      vAxis: {title: 'NDVI'},
+      hAxis: {title: '', format: 'YYYY-MMM'}
+    })
+print(chart_s2ndvi);
+
+// Display a time-series chart showing albedo
+var chart_s2albedo = ui.Chart.image.series({
+  imageCollection: s2_withNDVIAlbedo.select('Albedo'),
+  region: cotton_field,
+  reducer: ee.Reducer.mean(),
+  scale: 10
+}).setOptions({
+      lineWidth: 1,
+      title: 'Albedo Time Series - Sentinel-2',
+      interpolateNulls: true,
+      vAxis: {title: 'Albedo'},
+      hAxis: {title: '', format: 'YYYY-MMM'}
+    })
+print(chart_s2albedo);
+
+//////////////////////////////////////////////////////////////////////////////////////// 7.0-7.2
+
+var alfalfa_mask = cropLandcover.eq(36);
+var alfalfa = cropLandcover.updateMask(alfalfa_mask);
+// print(alfalfa)
+
+Map.addLayer(alfalfa, {}, 'Crop Alfalfa');
+
+// Make a polygon of a field.
+Map.addLayer(alfalfa_field, {color: 'blue'}, 'Farm')
+Map.centerObject(alfalfa_field)
+
+//Load the SENTINEL-2 collection and filter for specific periods, cloud threshold, and study region
+var s2_filtered = s2_collection
+  .filter(ee.Filter.date('2017-01-01', '2021-12-31'))
+  .filter(ee.Filter.bounds(alfalfa_field))
+  
+// mask out clouds across all images 
+var s2_filtered = s2_filtered.map(maskS2clouds)
+
+// display the cloud free sentinel-2 in true color composite
+var rgbVis = {
+  min: 0.0,
+  max: 0.3,
+  bands: ['B4', 'B3', 'B2'],
+};
+
+//Display the median value of all cloud free pixels
+Map.addLayer(s2_filtered.median(), rgbVis, 'RGB - Sentinel-2');
+
+// Map the function over the collection- Add NDVI and Albedo images
+var s2_withNDVI = s2_filtered.map(addNDVI);
+var s2_withNDVIAlbedo = s2_withNDVI.map(addAlbedo);
+
+// Display a time-series chart showing NDVI
+var chart2_s2ndvi = ui.Chart.image.series({
+  imageCollection: s2_withNDVIAlbedo.select('NDVI'),
+  region: alfalfa_field,
+  reducer: ee.Reducer.mean(),
+  scale: 10
+}).setOptions({
+      lineWidth: 1,
+      title: 'NDVI Time Series - Sentinel-2',
+      interpolateNulls: true,
+      vAxis: {title: 'NDVI'},
+      hAxis: {title: '', format: 'YYYY-MMM'}
+    })
+print(chart2_s2ndvi);
+
+// Display a time-series chart showing albedo
+var chart2_s2albedo = ui.Chart.image.series({
+  imageCollection: s2_withNDVIAlbedo.select('Albedo'),
+  region: alfalfa_field,
+  reducer: ee.Reducer.mean(),
+  scale: 10
+}).setOptions({
+      lineWidth: 1,
+      title: 'Albedo Time Series - Sentinel-2',
+      interpolateNulls: true,
+      vAxis: {title: 'Albedo'},
+      hAxis: {title: '', format: 'YYYY-MMM'}
+    })
+print(chart2_s2albedo);
