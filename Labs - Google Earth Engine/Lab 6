@@ -1,0 +1,542 @@
+/**** Start of imports. If edited, may not auto-convert in the playground. ****/
+var nlcd = ee.ImageCollection("USGS/NLCD_RELEASES/2019_REL/NLCD"),
+    forest_loss = 
+    /* color: #d63000 */
+    /* displayProperties: [
+      {
+        "type": "rectangle"
+      },
+      {
+        "type": "rectangle"
+      },
+      {
+        "type": "rectangle"
+      },
+      {
+        "type": "rectangle"
+      },
+      {
+        "type": "rectangle"
+      },
+      {
+        "type": "rectangle"
+      },
+      {
+        "type": "rectangle"
+      },
+      {
+        "type": "rectangle"
+      },
+      {
+        "type": "rectangle"
+      },
+      {
+        "type": "rectangle"
+      },
+      {
+        "type": "rectangle"
+      },
+      {
+        "type": "rectangle"
+      }
+    ] */
+    ee.Feature(
+        ee.Geometry.MultiPolygon(
+            [[[[-122.68258004160468, 39.59341042076818],
+               [-122.68258004160468, 39.591823043207825],
+               [-122.68043427439277, 39.591823043207825],
+               [-122.68043427439277, 39.59341042076818]]],
+             [[[-122.6960554596955, 39.599561165260404],
+               [-122.6960554596955, 39.598238470607754],
+               [-122.69433884592597, 39.598238470607754],
+               [-122.69433884592597, 39.599561165260404]]],
+             [[[-122.6521101471955, 39.56152361858883],
+               [-122.6521101471955, 39.560531055374085],
+               [-122.6506510254914, 39.560531055374085],
+               [-122.6506510254914, 39.56152361858883]]],
+             [[[-122.67279534311835, 39.608819320542345],
+               [-122.67279534311835, 39.607298422859714],
+               [-122.67073540659491, 39.607298422859714],
+               [-122.67073540659491, 39.608819320542345]]],
+             [[[-122.69563616535703, 39.58858695544469],
+               [-122.69563616535703, 39.587412879222434],
+               [-122.69396246693174, 39.587412879222434],
+               [-122.69396246693174, 39.58858695544469]]],
+             [[[-122.70595730564634, 39.588570419297994],
+               [-122.70595730564634, 39.58767746151602],
+               [-122.7047985913519, 39.58767746151602],
+               [-122.7047985913519, 39.588570419297994]]],
+             [[[-122.65071979254076, 39.55979665666637],
+               [-122.65071979254076, 39.558737895702926],
+               [-122.64934650152513, 39.558737895702926],
+               [-122.64934650152513, 39.55979665666637]]],
+             [[[-122.6476833584872, 39.56535538350738],
+               [-122.6476833584872, 39.56447866850881],
+               [-122.64638516932399, 39.56447866850881],
+               [-122.64638516932399, 39.56535538350738]]],
+             [[[-122.64080617457302, 39.56406511985091],
+               [-122.64080617457302, 39.563221472941585],
+               [-122.63969037562282, 39.563221472941585],
+               [-122.63969037562282, 39.56406511985091]]],
+             [[[-122.71005128737684, 39.53157908700761],
+               [-122.71005128737684, 39.530387495346645],
+               [-122.70848487731215, 39.530387495346645],
+               [-122.70848487731215, 39.53157908700761]]],
+             [[[-122.69595359679457, 39.531165342220795],
+               [-122.69595359679457, 39.53033784525029],
+               [-122.69473050948378, 39.53033784525029],
+               [-122.69473050948378, 39.531165342220795]]],
+             [[[-122.73047456444277, 39.583246065133146],
+               [-122.73047456444277, 39.58235303873625],
+               [-122.7292729348041, 39.58235303873625],
+               [-122.7292729348041, 39.583246065133146]]]], null, false),
+        {
+          "label": "forest_loss",
+          "system:index": "0"
+        }),
+    forest_noloss = 
+    /* color: #98ff00 */
+    /* displayProperties: [
+      {
+        "type": "rectangle"
+      },
+      {
+        "type": "rectangle"
+      },
+      {
+        "type": "rectangle"
+      },
+      {
+        "type": "rectangle"
+      },
+      {
+        "type": "rectangle"
+      },
+      {
+        "type": "rectangle"
+      },
+      {
+        "type": "rectangle"
+      },
+      {
+        "type": "rectangle"
+      },
+      {
+        "type": "rectangle"
+      },
+      {
+        "type": "rectangle"
+      },
+      {
+        "type": "rectangle"
+      },
+      {
+        "type": "rectangle"
+      },
+      {
+        "type": "rectangle"
+      }
+    ] */
+    ee.Feature(
+        ee.Geometry.MultiPolygon(
+            [[[[-123.02604855769552, 39.54006854359323],
+               [-123.02604855769552, 39.53986997068954],
+               [-123.02564086192525, 39.53986997068954],
+               [-123.02564086192525, 39.54006854359323]]],
+             [[[-123.02182139628805, 39.542964333883866],
+               [-123.02182139628805, 39.54250101555683],
+               [-123.02104892009176, 39.54250101555683],
+               [-123.02104892009176, 39.542964333883866]]],
+             [[[-122.99712810654272, 39.55662814811106],
+               [-122.99712810654272, 39.556090473518246],
+               [-122.9966023935758, 39.556090473518246],
+               [-122.9966023935758, 39.55662814811106]]],
+             [[[-123.06406382211483, 39.58021599043589],
+               [-123.06406382211483, 39.57968676785937],
+               [-123.06344154962338, 39.57968676785937],
+               [-123.06344154962338, 39.58021599043589]]],
+             [[[-122.88932860848497, 39.889278564991656],
+               [-122.88932860848497, 39.88881756714126],
+               [-122.88877070900988, 39.88881756714126],
+               [-122.88877070900988, 39.889278564991656]]],
+             [[[-122.84278638468162, 39.82090657290216],
+               [-122.84278638468162, 39.82049455759183],
+               [-122.84235723123923, 39.82049455759183],
+               [-122.84235723123923, 39.82090657290216]]],
+             [[[-122.81724154663088, 39.827360834170655],
+               [-122.81724154663088, 39.82694061800374],
+               [-122.8166675539017, 39.82694061800374],
+               [-122.8166675539017, 39.827360834170655]]],
+             [[[-122.84364443595226, 39.827818225099726],
+               [-122.84364443595226, 39.827599879258045],
+               [-122.84337085063274, 39.827599879258045],
+               [-122.84337085063274, 39.827818225099726]]],
+             [[[-122.87951608911045, 39.82537237684495],
+               [-122.87951608911045, 39.82499334748533],
+               [-122.87885090127476, 39.82499334748533],
+               [-122.87885090127476, 39.82537237684495]]],
+             [[[-122.88459331325596, 39.82643193854497],
+               [-122.88459331325596, 39.82605909477858],
+               [-122.88409442237919, 39.82605909477858],
+               [-122.88409442237919, 39.82643193854497]]],
+             [[[-122.87572861246174, 39.8313837710313],
+               [-122.87572861246174, 39.83116955604758],
+               [-122.87538528970784, 39.83116955604758],
+               [-122.87538528970784, 39.8313837710313]]],
+             [[[-122.87793654368373, 39.81787569479704],
+               [-122.87793654368373, 39.81767791903391],
+               [-122.87742155955287, 39.81767791903391],
+               [-122.87742155955287, 39.81787569479704]]],
+             [[[-122.92194620720757, 39.752793343543615],
+               [-122.92194620720757, 39.75257063520924],
+               [-122.92137757889641, 39.75257063520924],
+               [-122.92137757889641, 39.752793343543615]]]], null, false),
+        {
+          "label": "forest_noloss",
+          "system:index": "0"
+        });
+/***** End of imports. If edited, may not auto-convert in the playground. *****/
+///////////////////////////////////////////////////////////////////////////////////////////////////////////// 4.1 - 4.2
+
+// display the county polygon
+// Map.addLayer(ca_counties);
+// deleted at beginning of 4.2
+
+// import the county shapefile from the asset
+var ca_counties = ee.FeatureCollection('users/savsouthwardwx/ca-county-boundaries');
+
+//display the county polygon
+Map.addLayer(ca_counties);
+
+// select some CA counties near the coastal Range of Northern California, also the region of interest (roi)
+
+var roi = ca_counties.filter(ee.Filter.inList('NAME',["Glenn","Mendocino","Tehama",
+"Trinity", "Lake","Shasta", "Humboldt"]));
+print(roi);
+
+//display the county polygon
+Map.addLayer(roi);
+
+// Write a Function to mask clouds based on the QA_PIXEL band of Landsat 8 SR data.
+function maskL8sr(image) {
+  // Bits 3 and 4 are cloud and cloud shadow, respectively. SEE BANDS for reference
+  var cloudsBitMask = (1 << 3); //pushes "1" 3 spaces to the left 
+  var cloudShadowBitMask = (1 << 4);// pushes "1" 4 spaces to the left
+  
+  // Get the pixel QA band from the Landsat 8 collection level 2 SR image
+  var qa = image.select('QA_PIXEL');
+  // Set both flags to zero to indicate clear sky conditions.
+  var mask = qa.bitwiseAnd(cloudShadowBitMask).eq(0)
+                 .and(qa.bitwiseAnd(cloudsBitMask).eq(0));
+  return image.updateMask(mask);
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////// 4.4
+
+//NLCD select forest only
+var nlcd2019 = nlcd.filter(ee.Filter.eq('system:index', '2019')).first();
+var nlcd2019 = nlcd2019.select('landcover');
+var nlcd2019 = nlcd2019.clip(roi);
+
+//Map.addLayer(nlcd2019,{min:0, max:100}, 'NLCD_2019');
+var for2019 = nlcd2019.lt(45).and(nlcd2019.gt(40));
+var forest_mask = for2019.eq(1);
+Map.addLayer(forest_mask,{min:0, max:1}, 'forest 2019');
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////// 4.5
+
+// Create a cloud free Landsat 8 composite Map - 2019 August 10 to 2020 August 10
+var collection_pre = ee.ImageCollection('LANDSAT/LC08/C02/T1_L2')
+    .filterDate('2019-08-10', '2020-08-10')
+    .filterBounds(roi)
+    .map(maskL8sr);
+
+var composite_pre = collection_pre.median();
+print(composite_pre);
+
+//subset spectral bands and apply the scale factor to the SR image
+var composite_pre = composite_pre.select('SR_B[1-7]');
+var composite_pre = composite_pre.multiply(2.75e-05).subtract(0.2);
+
+//multiply by 100 to derive percent reflectance
+var composite_pre = composite_pre.multiply(100);
+var composite_pre = composite_pre.updateMask(forest_mask);
+var composite_pre = composite_pre.clip(roi);
+
+print(composite_pre);
+
+// Define true-color visualization parameters for SR image.
+var tc_sr = {
+  bands: ['SR_B4', 'SR_B3', 'SR_B2'],
+  min: 0,
+  max: 30
+};
+
+// Define false-color visualization parameters for SR image.
+var fcc_sr = {
+  bands: ['SR_B5', 'SR_B4', 'SR_B3'],
+  min: 0,
+  max: 30
+};
+
+Map.centerObject(roi,7);
+// Map.addLayer(composite_pre, tc_sr, 'cloud masked true color composite_pre SR year 2019');
+Map.addLayer(composite_pre, fcc_sr, 'cloud masked FCC composite_pre SR year 2019-2020');
+
+// Create a cloud free Landsat 8 composite 2 Map - 2020 August 11 to 2021 August 10
+var collection_post = ee.ImageCollection('LANDSAT/LC08/C02/T1_L2')
+    .filterDate('2020-08-11', '2021-08-10')
+    .filterBounds(roi)
+    .map(maskL8sr);
+
+var composite_post = collection_post.median();
+print(composite_post);
+
+//subset spectral bands and apply the scale factor to the SR image
+var composite_post = composite_post.select('SR_B[1-7]');
+var composite_post = composite_post.multiply(2.75e-05).subtract(0.2);
+
+//multiply by 100 to derive percent reflectance
+var composite_post = composite_post.multiply(100);
+var composite_post = composite_post.updateMask(forest_mask);
+var composite_post = composite_post.clip(roi);
+
+print(composite_post);
+
+Map.centerObject(roi,6);
+//Map.addLayer(composite_post, tc_sr, 'cloud masked true color composite_post SR year 2019');
+Map.addLayer(composite_post, fcc_sr, 'cloud masked FCC composite_post SR year 2020-2021'); 
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////// Question 1
+
+// Create the scatter chart
+var Chart1 = ui.Chart.image.regions(
+    composite_pre, studyregions, ee.Reducer.mean(), 20, 'label')
+        .setChartType('ScatterChart');
+print(Chart1);
+
+// Define customization options.
+var plotOptions = {
+  title: 'Landsat-8 surface reflectance spectral curves',
+  hAxis: {title: 'Wavelength (μm)'},
+  vAxis: {title: 'Surface Reflectance (%)'},
+  lineWidth: 2,
+  pointSize: 5,
+  series: {
+    0: {color: 'blue'}, // water
+    1: {color: 'green'}, // vegetation
+    2: {color: 'red'}, // urban
+    3: {color: 'purple'}, // soil
+    4: {color: 'cyan'}, // cloud
+}};
+
+// Define a list of Landsat-8 wavelengths for X-axis labels.
+var wavelengths = [0.44, 0.48, 0.56, 0.65, 0.86, 1.61, 2.2];
+
+// Create the chart and set options.
+var Chart2 = ui.Chart.image.regions(
+    composite_post, studyregions, ee.Reducer.mean(), 10, 'label', wavelengths)
+        .setChartType('ScatterChart')
+        .setOptions(plotOptions);
+// Display the chart.
+print(Chart2);
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////// 4.6
+
+// create spectral reflectance curve from regions where forest burn occurred and where it did not
+// create the feature collection
+var studyregions= ee.FeatureCollection([forest_noloss,forest_loss]);
+print(['studyregions:', studyregions]);
+
+// Define customization options for SR
+var plotOptions = {
+  title: 'Landsat-8 surface reflectance spectral curves',
+  hAxis: {title: 'Wavelength (μm)'},
+  vAxis: {title: 'SR Reflectance (%)'},
+  lineWidth: 2,
+  pointSize: 5,
+  series: {
+    0: {color: 'green'}, // forest_loss
+    1: {color: 'red'}, // forest no loss
+}};
+
+// Define a list of Landsat-8 wavelengths for X-axis labels.
+var wavelengths = [0.44, 0.48, 0.56, 0.65, 0.86, 1.61, 2.2];
+
+// Create the chart and set options.
+var Chart1 = ui.Chart.image.regions(
+    composite_pre, studyregions, ee.Reducer.mean(), 10, 'label', wavelengths)
+        .setChartType('ScatterChart')
+        .setOptions(plotOptions);
+// Display the chart.
+print('Before Fire:', Chart1);
+
+
+
+// Create the chart and set options.
+var Chart2 = ui.Chart.image.regions(
+    composite_post, studyregions, ee.Reducer.mean(), 10, 'label', wavelengths)
+        .setChartType('ScatterChart')
+        .setOptions(plotOptions);
+// Display the chart.
+print('After Fire:', Chart2);
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////// 5.1
+
+// band ratio NIR/Red
+// band ratio NIR/Red
+var bandRatio_pre = composite_pre.expression(
+    'band1 / band2', {
+      'band1': composite_pre.select('SR_B5'),
+      'band2': composite_pre.select('SR_B4')});
+Map.addLayer(bandRatio_pre,{min:0, max:10}, 'NIR/R Band Ratio before fire');
+ 
+// band ratio NIR/Red
+var bandRatio_post = composite_post.expression(
+    'band1 / band2', {
+      'band1': composite_post.select('SR_B5'),
+      'band2': composite_post.select('SR_B4')});
+Map.addLayer(bandRatio_post,{min:0, max:10}, 'NIR/R Band Ratio');
+ 
+// difference in band ratio – Image differencing
+var bandratio_nirR_diff = bandRatio_pre.subtract(bandRatio_post);
+Map.addLayer(bandratio_nirR_diff,{min:-10, max:10}, 'NIR/R Band Ratio difference after fire');
+ 
+ 
+//calculate the mean bandRatio_post
+var br_nirR2_mean = bandRatio_post.reduceRegion({
+    reducer: ee.Reducer.mean(),
+    geometry: studyregions.filter(ee.Filter.eq('label',"forest_loss")),
+    scale: 30
+  });
+  
+  
+var br_nirR_diff_mean = bandratio_nirR_diff.reduceRegion({
+    reducer: ee.Reducer.mean(),
+    geometry: studyregions.filter(ee.Filter.eq('label',"forest_loss")),
+    scale: 30
+  });
+  
+print(br_nirR2_mean);
+print(br_nirR_diff_mean);
+ 
+//define the threshold value for binary classification
+var br_nirR_diff_threshold = ee.Number(br_nirR_diff_mean.get('SR_B5'));
+print(['Band Ratio diff threshold : ', br_nirR_diff_threshold]);
+ 
+//using image thresholding – gte = greater than or equal to
+var forloss_brdiff = bandratio_nirR_diff.gte(br_nirR_diff_threshold);
+Map.addLayer(forloss_brdiff,{min:0, max:1,palette:['green','red']},'Forest loss using NIR/R Band Ratio difference');
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////// 5.2
+
+// compute NDVI
+var ndvi_pre = composite_pre.normalizedDifference(['SR_B5', 'SR_B4']);
+var ndvi_post = composite_post.normalizedDifference(['SR_B5', 'SR_B4']);
+// difference in band ratio
+var ndvi_diff = ndvi_pre.subtract(ndvi_post); //-ve value is loss in vegetation
+//Map.addLayer(ndvi_diff,{min:-10, max:10}, 'NIR/R Band Ratio difference after fire');
+ 
+ 
+//calculate the mean ndvi_diff
+var ndvi_diff_mean = ndvi_diff.reduceRegion({
+    reducer: ee.Reducer.mean(),
+    geometry: studyregions.filter(ee.Filter.eq('label',"forest_loss")),
+    scale: 30
+  });
+  
+//print(ndvi_diff_mean)
+//define the threshold value for binary classification
+var ndvi_diff_threshold = ee.Number(ndvi_diff_mean.get('nd'));
+print(['NDVI diff threshold : ', ndvi_diff_threshold]);
+ 
+//using image thresholding
+var forloss_ndvidiff = ndvi_diff.gte(ndvi_diff_threshold);
+Map.addLayer(forloss_ndvidiff,{min:0, max:1,palette:['green','red']}, 'Forest loss using NDVI difference');
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////// 5.3
+
+// compute Normalized Burn Ratio (NBR)
+var nbr_pre = composite_pre.normalizedDifference(['SR_B6', 'SR_B7']);
+var nbr_post = composite_post.normalizedDifference(['SR_B6', 'SR_B7']);
+// difference in band ratio
+var nbr_diff = nbr_pre.subtract(nbr_post); //-ve value is loss in vegetation
+//Map.addLayer(nbr_diff,{min:-10, max:10}, 'NIR/R Band Ratio difference after fire');
+
+var nbr_diff_threshold = 0.1;
+print(['nbr diff threshold : ', nbr_diff_threshold]);
+//using image thresholding - gte = greater than or equal to
+var forloss_nbrdiff = nbr_diff.gte(nbr_diff_threshold);
+Map.addLayer(forloss_nbrdiff,{min:0, max:1}, 'Forest loss using nbr difference');
+
+// Categorize the burn severity. High positive values shows higher burn severity 
+// - gte = greater than or equal to, lt = less than, gt = greater than
+var severity = nbr_diff
+  .where(nbr_diff.lt(0.10), 0)
+  .where(nbr_diff.gte(0.10).and(nbr_diff.lt(0.27)), 1)
+  .where(nbr_diff.gte(0.27).and(nbr_diff.lt(0.44)), 2)
+  .where(nbr_diff.gte(0.44).and(nbr_diff.lt(0.66)), 3)
+  .where(nbr_diff.gt(0.66), 4);
+ 
+// define color palette
+var dnbr_Palette = ['green','yellow','orange','red','magenta'];
+Map.addLayer(severity,{min:0, max:4, palette: dnbr_Palette}, 'Forest loss using nbr difference-categories');
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////// 5.4
+
+// band ratio NIR/Red
+var bandRatio_pre = composite_pre.expression(
+    'band1 / band2', {
+      'band1': composite_pre.select('SR_B7'),
+      'band2': composite_pre.select('SR_B6')});
+Map.addLayer(bandRatio_pre,{min:0, max:10}, 'NIR/R Band Ratio before fire');
+ 
+// band ratio NIR/Red
+var bandRatio_post = composite_post.expression(
+    'band1 / band2', {
+      'band1': composite_post.select('SR_B7'),
+      'band2': composite_post.select('SR_B6')});
+Map.addLayer(bandRatio_post,{min:0, max:10}, 'NIR/R Band Ratio');
+ 
+// difference in band ratio – Image differencing
+var bandratio_nirR_diff = bandRatio_pre.subtract(bandRatio_post);
+Map.addLayer(bandratio_nirR_diff,{min:-10, max:10}, 'NIR/R Band Ratio difference after fire');
+ 
+  //calculate the mean bandRatio_post
+var br_nirR2_mean = bandRatio_post.reduceRegion({
+    reducer: ee.Reducer.mean(),
+    geometry: studyregions.filter(ee.Filter.eq('label',"forest_loss")),
+    scale: 30
+  });
+  
+  
+var br_nirR_diff_mean = bandratio_nirR_diff.reduceRegion({
+    reducer: ee.Reducer.mean(),
+    geometry: studyregions.filter(ee.Filter.eq('label',"forest_loss")),
+    scale: 30
+  });
+  
+print(br_nirR2_mean);
+print(br_nirR_diff_mean);
+ 
+//define the threshold value for binary classification
+var br_nirR_diff_threshold = ee.Number(br_nirR_diff_mean.get('SR_B7'));
+print(['Band Ratio diff threshold : ', br_nirR_diff_threshold]);
+ 
+//using image thresholding – gte = greater than or equal to
+var forloss_brdiff = bandratio_nirR_diff.gte(br_nirR_diff_threshold);
+Map.addLayer(forloss_brdiff,{min:0, max:1,palette:['green','red']},'Forest loss using NIR/R Band Ratio difference');
+
+ ///////////////////////////////////////////////////////////////////////////////////////////////////////////// 5.5
+// compute Normalized Burn Ratio (NBR)
+var nbr_pre = composite_pre.normalizedDifference(['SR_B5', 'SR_B7']);
+var nbr_post = composite_post.normalizedDifference(['SR_B5', 'SR_B7']);
+// difference in band ratio
+var nbr_diff = nbr_pre.subtract(nbr_post); //-ve value is loss in vegetation
+//Map.addLayer(nbr_diff,{min:-10, max:10}, 'NIR/R Band Ratio difference after fire');
+
+var nbr_diff_threshold = 0.1;
+print(['nbr diff threshold : ', nbr_diff_threshold]);
+//using image thresholding - gte = greater than or equal to
+var forloss_nbrdiff = nbr_diff.gte(nbr_diff_threshold);
+Map.addLayer(forloss_nbrdiff,{min:0, max:1}, 'Forest loss using nbr difference');
