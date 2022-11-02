@@ -1,0 +1,270 @@
+/**** Start of imports. If edited, may not auto-convert in the playground. ****/
+var geometry = 
+    /* color: #0b4a8b */
+    /* locked: true */
+    ee.Geometry.Point([-97.59672793127274, 35.56604429517716]),
+    water = 
+    /* color: #00ffff */
+    /* locked: true */
+    /* displayProperties: [
+      {
+        "type": "rectangle"
+      }
+    ] */
+    ee.Feature(
+        ee.Geometry.Polygon(
+            [[[-97.5947752831099, 35.572234639681355],
+              [-97.5947752831099, 35.56893589795907],
+              [-97.58951815344071, 35.56893589795907],
+              [-97.58951815344071, 35.572234639681355]]], null, false),
+        {
+          "label": "water",
+          "system:index": "0"
+        }),
+    urban = 
+    /* color: #ff0000 */
+    /* locked: true */
+    /* displayProperties: [
+      {
+        "type": "rectangle"
+      }
+    ] */
+    ee.Feature(
+        ee.Geometry.Polygon(
+            [[[-97.57789012417736, 35.58537716362696],
+              [-97.57789012417736, 35.585076143024956],
+              [-97.57738050446453, 35.585076143024956],
+              [-97.57738050446453, 35.58537716362696]]], null, false),
+        {
+          "label": "",
+          "system:index": "0"
+        }),
+    vegetation = 
+    /* color: #999900 */
+    /* displayProperties: [
+      {
+        "type": "rectangle"
+      }
+    ] */
+    ee.Feature(
+        ee.Geometry.Polygon(
+            [[[-97.67230520906836, 35.53552889416552],
+              [-97.67230520906836, 35.535068351220225],
+              [-97.67155821385771, 35.535068351220225],
+              [-97.67155821385771, 35.53552889416552]]], null, false),
+        {
+          "label": "vegetation",
+          "system:index": "0"
+        });
+/***** End of imports. If edited, may not auto-convert in the playground. *****/
+///////////////////////////////////////////////////////////////////////////////////////// 4.2
+
+// Write a Function to mask clouds based on the QA_PIXEL band of Landsat 8 SR data.
+function maskL8sr(image) {
+  // Bits 3 and 4 are cloud and cloud shadow, respectively. SEE BANDS for reference
+  var cloudsBitMask = (1 << 3); //pushes "1" 3 spaces to the left 
+  var cloudShadowBitMask = (1 << 4);// pushes "1" 4 spaces to the left
+  
+  // Get the pixel QA band from the Landsat 8 collection level 2 SR image
+  var qa = image.select('QA_PIXEL');
+  // Set both flags to zero to indicate clear sky conditions.
+  var mask = qa.bitwiseAnd(cloudShadowBitMask).eq(0)
+                 .and(qa.bitwiseAnd(cloudsBitMask).eq(0));
+  return image.updateMask(mask);
+};
+
+///////////////////////////////////////////////////////////////////////////////////////// 4.3
+
+
+var l8collection = ee.ImageCollection('LANDSAT/LC08/C02/T1_L2')
+    .filterDate('2020-01-01', '2020-12-31')
+    .filterBounds(geometry)
+    .map(maskL8sr);
+
+///////////////////////////////////////////////////////////////////////////////////////// 4.4
+
+// Subset spectral bands and take a median of all cloud-free pixels to create a median 
+// composite Landsat map for the year 2020
+var l8optical = l8collection.select('SR_B[1-7]');
+var l8optical = l8optical.median();
+
+// Define true-color visualization parameters for SR image.
+var tc_sr = {
+  bands: ['SR_B4', 'SR_B3', 'SR_B2'],
+  min: 1000,
+  max: 30000
+};
+
+Map.centerObject(geometry,10);
+Map.addLayer(l8optical , tc_sr, 'median value from all cloud-free pixels');
+
+///////////////////////////////////////////////////////////////////////////////////////// 4.8
+
+//Create a feature collection with study polygons
+var studyregions= ee.FeatureCollection([water,vegetation,urban]);
+print(['studyregions:', studyregions]);
+
+///////////////////////////////////////////////////////////////////////////////////////// 4.9
+
+//function to Scale Landsat thermal bands to Kelvin and convert to Celsius, and set image acquisition time
+var lstL8Function = function(image){
+  var lstK = image.select('ST_B10').multiply(0.00341802).add(149.0)
+  var lstC = lstK.subtract(273.15);
+  var lstC1 = lstC.copyProperties(image, ['system:time_start']);
+  return(lstC1);
+}
+
+// apply the LST scaling function to all images within the Landsat collection. 
+var L8_lstC = l8collection.map(lstL8Function);
+
+///////////////////////////////////////////////////////////////////////////////////////// 4.10
+
+//write a function that applies scale factors to input Landsat images and sets image acquisition time
+var L8Efunction = function(image){
+  var emiss = image.select('ST_EMIS').multiply(0.0001);
+  var emiss1 = emiss.copyProperties(image, ['system:time_start']);
+  return(emiss1);
+}
+
+// apply the Emissivity scaling function to all images within the MODIS collection
+var L8E = l8collection.map(L8Efunction);
+
+///////////////////////////////////////////////////////////////////////////////////////// 4.11
+
+// Make a time series LST chart showing mean LST values for all features over time
+var LSTTimechart_l8 = ui.Chart.image.seriesByRegion(L8_lstC,studyregions,
+       ee.Reducer.mean(), 'ST_B10',30, 'system:time_start', 'label')
+       .setChartType('ScatterChart')
+       .setOptions({
+  title: 'LST  Time Series from Landsat 8',
+  hAxis: {title: 'date', format: 'MM-yy', gridlines: {count: 12}},
+  vAxis: {title: 'LST Celsius'},
+  lineWidth: 2,
+  pointSize: 5,
+  // Define customization options.
+  series: {
+    0: {color: 'blue'}, // water
+    1: {color: 'green'}, // vegetation
+    2: {color: 'red'}, // urban
+}});
+
+print(LSTTimechart_l8);
+
+///////////////////////////////////////////////////////////////////////////////////////// 4.12
+
+// Make a time series emissivity chart showing mean emissivity values for all features over time
+var EMISSTimechart_l8 = ui.Chart.image.seriesByRegion(L8E,studyregions,
+       ee.Reducer.mean(), 'ST_EMIS',30, 'system:time_start', 'label')
+       .setChartType('ScatterChart')
+       .setOptions({
+  title: 'Emissivity from Landsat 8',
+  hAxis: {title: 'date', format: 'MM-yy', gridlines: {count: 12}},
+  vAxis: {title: 'Emissivity (dimensonless)'},
+  lineWidth: 2,
+  pointSize: 5,
+  series: {
+    0: {color: 'blue'}, // water
+    1: {color: 'green'}, // vegetation
+    2: {color: 'red'}, // urban
+}});
+
+print(EMISSTimechart_l8);
+
+///////////////////////////////////////////////////////////////////////////////////////// 4.13
+
+//PLot Landsat8 LST- mean values
+var LSTclipL8 = L8_lstC.mean();
+Map.addLayer(LSTclipL8, {min: 0,max: 50}, 'L8 LST mean in C');
+
+///////////////////////////////////////////////////////////////////////////////////////// 5.1
+
+// import the MODIS 8-day average surface reflectance data and Filter it to specified dates covering the specified area (geometry). Take the first image in the collection.
+var modis_collection = ee.ImageCollection('MODIS/061/MOD09A1')
+                  .filter(ee.Filter.date('2018-07-01', '2018-09-01'))
+                  .filterBounds(geometry)
+                  .first();
+                  
+var trueColor =   modis_collection.select(['sur_refl_b01', 'sur_refl_b04', 'sur_refl_b03']);
+Map.centerObject(geometry, 10)
+Map.addLayer(trueColor, {min: -100,max: 3000}, 'MODIS True Color');
+
+///////////////////////////////////////////////////////////////////////////////////////// 5.2
+
+// Import MODIS LST Daily product collection. Filter the LST collection to include only images from the time frame and select day time temperature band
+var modis = ee.ImageCollection('MODIS/006/MOD11A1')
+    .filterDate('2020-01-01', '2020-12-31')
+    .filterBounds(geometry);
+
+///////////////////////////////////////////////////////////////////////////////////////// 5.3
+
+var modLSTday = modis.select('LST_Day_1km');
+var modEday = modis.select('Emis_31');
+
+///////////////////////////////////////////////////////////////////////////////////////// 5.4
+
+// Write a function to Scale MODIS thermal bands to Kelvin and convert to Celsius, set image acquisition time.
+var lstModFunction = function(image){
+  var lstC = image.multiply(0.02).subtract(273.15);
+  var lstC1 = lstC.copyProperties(image, ['system:time_start']);
+  return(lstC1);
+}
+
+// apply the LST scaling function to all images within the MODIS collection
+var modC = modLSTday.map(lstModFunction)
+
+// write a function that applies scale factors to input MODIS image and sets image acquisition time.
+var EModfunction = function(image){
+  var emiss= image.multiply(0.002).add(0.49);
+  var emiss1 = emiss.copyProperties(image, ['system:time_start']);
+  return(emiss1);
+}
+
+// apply the Emissivity scaling function to all images within the MODIS collection
+var modE = modEday.map(EModfunction);
+
+///////////////////////////////////////////////////////////////////////////////////////// 5.5
+
+// Make a time series LST chart showing mean LST values for all features over time
+var LSTTimechart_MOD = ui.Chart.image.seriesByRegion(modC,studyregions,
+       ee.Reducer.mean(), 'LST_Day_1km',30, 'system:time_start', 'label')
+       .setChartType('ScatterChart')
+       .setOptions({
+  title: 'LST  Time Series from MOD11A1',
+  hAxis: {title: 'date', format: 'MM-yy', gridlines: {count: 12}},
+  vAxis: {title: 'LST Celsius'},
+  lineWidth: 2,
+  pointSize: 5,
+  // Define customization options.
+  series: {
+    0: {color: 'blue'}, // water
+    1: {color: 'green'}, // vegetation
+    2: {color: 'red'}, // urban
+}});
+
+print(LSTTimechart_MOD);
+
+///////////////////////////////////////////////////////////////////////////////////////// 5.6
+
+// Make a time series emissivity chart showing mean emissivity values for all features over time
+var EMISSTimechart_MOD = ui.Chart.image.seriesByRegion(modE,studyregions,
+       ee.Reducer.mean(), 'Emis_31',30, 'system:time_start', 'label')
+       .setChartType('ScatterChart')
+       .setOptions({
+  title: 'Emissivity from MOD11A1',
+  hAxis: {title: 'date', format: 'MM-yy', gridlines: {count: 12}},
+  vAxis: {title: 'Emissivity (dimensonless)'},
+  lineWidth: 2,
+  pointSize: 5,
+  series: {
+    0: {color: 'blue'}, // water
+    1: {color: 'green'}, // vegetation
+    2: {color: 'red'}, // urban
+}});
+
+print(EMISSTimechart_MOD);
+
+///////////////////////////////////////////////////////////////////////////////////////// 5.7
+
+//PLot MODIS - mean values
+var LSTclipMOD = modC.mean();
+Map.addLayer(LSTclipMOD, {min: 0,max: 50}, 'MOD LST mean in C');
