@@ -1,0 +1,155 @@
+/**** Start of imports. If edited, may not auto-convert in the playground. ****/
+var region = ee.FeatureCollection("users/onlynishan/newstudy_region"),
+    val_points = ee.FeatureCollection("users/onlynishan/newstudy_val");
+/***** End of imports. If edited, may not auto-convert in the playground. *****/
+
+// Lab 9 section 5
+
+//////////////////////////////////////////////////////////////////////////////////// 4.2
+
+// Write a Function to mask clouds based on the QA_PIXEL band of Landsat 8 SR data.
+
+function maskL8sr(image) {
+  // Bits 3 and 4 are cloud and cloud shadow, respectively. SEE BANDS for reference
+  var cloudsBitMask = (1 << 3); //pushes "1" 3 spaces to the left 
+  var cloudShadowBitMask = (1 << 4);// pushes "1" 4 spaces to the left
+  
+  // Get the pixel QA band from the Landsat 8 collection level 2 SR image
+  var qa = image.select('QA_PIXEL');
+  // Set both flags to zero to indicate clear sky conditions.
+  var mask = qa.bitwiseAnd(cloudShadowBitMask).eq(0)
+                 .and(qa.bitwiseAnd(cloudsBitMask).eq(0));
+  return image.updateMask(mask);
+}
+
+
+// Create a cloud free Landsat 8 collection 2 level 1 collection covering the specific 
+// region within a specific period
+var l8collection = ee.ImageCollection('LANDSAT/LC08/C02/T1_L2')
+    .filterDate('2020-01-01', '2020-12-31')
+    .filterBounds(region)
+    .map(maskL8sr);
+
+//subset spectral bands
+var l8optical = l8collection.select('SR_B[1-7]');
+
+// Create a median composite from all cloud-free Landsat 8 pixels
+var l8_input = l8optical.median();
+
+//clip Landsat 8 composite to study region only
+var l8_input = l8_input.clip(region);
+print(l8_input)
+
+// Define true-color visualization parameters for SR image.
+var tc_sr = {
+  bands: ['SR_B4', 'SR_B3', 'SR_B2'],
+  min: 1000,
+  max: 30000
+};
+
+// Display the true color composite Landsat 8 image
+Map.centerObject(region,9);
+Map.addLayer(l8_input, tc_sr, 'median Landsat 8 composite - True color');
+
+// False color composite visualization parameters
+var fcc_sr = {
+  bands: ['SR_B5', 'SR_B4', 'SR_B3'],
+  min: 1000,
+  max: 30000
+};
+
+// Display the False color composite Landsat 8 image
+Map.centerObject(region,9);
+Map.addLayer(l8_input, fcc_sr, 'median Landsat 8 composite - FCC');
+
+//////////////////////////////////////////////////////////////////////////////////// 4.3
+
+// Make the training dataset from the input data itself.
+var training = l8_input.sample({
+  region: region,
+  scale: 30,
+  numPixels: 5000
+});
+
+//////////////////////////////////////////////////////////////////////////////////// 4.4
+
+// Initiate the Clustering Algorithm in GEE using Weka based KMeans clustering algorithm.
+// Assign 15 clusters
+var clusterer = ee.Clusterer.wekaKMeans(15).train(training);
+
+// Cluster the l8_input using the clustering algorithm.
+var cluster = l8_input.cluster(clusterer);
+
+// Display the clusters using randomly assigned colors.
+Map.addLayer(cluster.randomVisualizer(), {}, 'clusters');
+
+//////////////////////////////////////////////////////////////////////////////////// 4.5
+
+// Visualize individual cluster for labeling 
+var clusterx = cluster.eq(14).rename('new_cluster')
+Map.addLayer(clusterx, {}, 'cluster X');
+
+// Reassign new class values using table 1.
+var new_lc = cluster
+      .where(cluster.eq(0), 4)
+      .where(cluster.eq(1), 4)
+      .where(cluster.eq(2), 2)
+      .where(cluster.eq(3), 4)
+      .where(cluster.eq(4), 2)
+      .where(cluster.eq(5), 4)
+      .where(cluster.eq(6), 1)
+      .where(cluster.eq(7), 4)
+      .where(cluster.eq(8), 3)
+      .where(cluster.eq(9), 1)
+      .where(cluster.eq(10), 4)
+      .where(cluster.eq(11), 4)
+      .where(cluster.eq(12), 3)
+      .where(cluster.eq(13), 4)
+      .where(cluster.eq(14), 4).rename('classified_lc')
+      
+// define color palette to display the final land cover map
+var lc_Palette = ['blue','green','red','white'];
+Map.addLayer(new_lc,{min:1, max:4, palette: lc_Palette}, 'Land cover map');
+
+//////////////////////////////////////////////////////////////////////////////////// 4.6
+
+// Get reference dataset for accuracy assignment- extract pixel values from new land cover data
+var validation = new_lc.sampleRegions({
+  collection: val_points,
+  scale: 30,
+});
+print(validation);
+
+//Compare the landcover of your validation data against the classification cluster
+var confusionMatrix = validation.errorMatrix('ref_lc', 'classified_lc');
+//Print the error matrix to the console
+print('Validation error matrix: ', confusionMatrix);
+
+// Calculate overall accuracy to the console.
+print("Overall accuracy (%)", confusionMatrix.accuracy().multiply(100));
+
+// Calculate user's accuracy to the console
+print("User's accuracy(%)", confusionMatrix.consumersAccuracy().multiply(100));
+
+// Calculate producer's accuracy to the console
+print("Producer's accuracy (%)", confusionMatrix.producersAccuracy().multiply(100));
+
+// Calculate kappa coefficient to the console
+print('Kappa coefficient (%)', confusionMatrix.kappa().multiply(100));
+
+//////////////////////////////////////////////////////////////////////////////////// (10 Points)
+
+// 1) overall accuracy
+  /// 77.68313458262351 %
+
+// 2) kappa coefficient/statistic
+  /// 64.57714330463463 %
+
+// 3) the user’s and producer’s accuracies for water, forest, and urban classes 
+  /// user accuracy - water: 89.65517241379311 %
+  ///               - forest: 87.90322580645162 %
+  ///               - urban: 81.25 %
+  /// producer accuracy - water: 95.1219512195122 %
+  ///                   - forest: 64.11764705882354 %
+  ///                   - urban: 20.967741935483872 %
+
