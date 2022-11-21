@@ -1,0 +1,159 @@
+/**** Start of imports. If edited, may not auto-convert in the playground. ****/
+var region = 
+    /* color: #d6d6d6 */
+    /* displayProperties: [
+      {
+        "type": "rectangle"
+      }
+    ] */
+    ee.Geometry.Polygon(
+        [[[-110.83512905345582, 31.744537960280386],
+          [-110.83512905345582, 31.739975934034295],
+          [-110.83090189204835, 31.739975934034295],
+          [-110.83090189204835, 31.744537960280386]]], null, false),
+    tree = /* color: #3a00d6 */ee.Geometry.Polygon(
+        [[[-110.83342249798903, 31.742577712844103],
+          [-110.83343792069087, 31.74256887394845],
+          [-110.83344060289988, 31.74255946480051],
+          [-110.83344362038503, 31.742548915148692],
+          [-110.83344294983277, 31.742533518357366],
+          [-110.83344194400439, 31.74252467945746],
+          [-110.83343121516833, 31.742516410808417],
+          [-110.83341378080974, 31.74251441492751],
+          [-110.83339198786149, 31.74251527030504],
+          [-110.83338528233895, 31.742525249709107],
+          [-110.83338058847318, 31.74253380348315],
+          [-110.83337991792092, 31.742547204394207],
+          [-110.8333846117867, 31.742559749926222],
+          [-110.83339265841374, 31.742567733445714],
+          [-110.83340606945882, 31.742576857467157]]]);
+/***** End of imports. If edited, may not auto-convert in the playground. *****/
+// Lab 11- Canopy Height Model using LIDAR Data
+
+// Section 4
+
+///////////////////////////////////////////////////////////////////////////////////////// 4.1
+
+// Read in Digital Terrain Model/Images for for year 2017 (using .filterMetadata by Type)
+var DTMimages_2017 =  ee.ImageCollection('projects/neon/DP3-30024-001_DEM')
+  .filterBounds(region)
+  .filterDate('2017-01-01', '2017-12-31')
+  .filterMetadata('Type','equals','DTM')
+
+// Read in Digital Terrain Model/Images for the year 2017 (using .filterMetadata by Type)
+var DTMimages_2017 =  ee.ImageCollection('projects/neon/DP3-30024-001_DEM')
+  .filterBounds(region)
+  .filterDate('2017-01-01', '2017-12-31')
+  .filterMetadata('Type','equals','DTM')
+  
+// Get the first layer and clip the study region
+var DTMimage_2017 = DTMimages_2017.first().clip(region);
+
+// Visualize the DTM
+Map.centerObject(region,15);
+Map.addLayer(DTMimage_2017, {min: 1900, max:2100}, 'DTM');
+
+///////////////////////////////////////////////////////////////////////////////////////// 4.2
+
+// Read in Digital Surface Model/Images for the year 2017 (using .filterMetadata by Type)
+var DSMimages_2017 =  ee.ImageCollection('projects/neon/DP3-30024-001_DEM')
+  .filterBounds(region)
+  .filterDate('2017-01-01', '2017-12-31')
+  .filterMetadata('Type','equals','DSM')
+
+// Get the first layer and clip the study region
+var DSMimage_2017 = DSMimages_2017.first().clip(region);  
+
+// Visualize the DSM layer
+Map.centerObject(region,15);
+Map.addLayer(DSMimage_2017, {min: 1900, max:2100}, 'DSM');  
+
+///////////////////////////////////////////////////////////////////////////////////////// 4.3
+
+// Subtract Digital DTM from DSM to derive the canopy height model (CHM)
+var CHM2017 = DSMimage_2017.subtract(DTMimage_2017);
+
+// Visualize the DSM, DTM, and CHM for the year 2017
+Map.centerObject(region,15);
+Map.addLayer(CHM2017, {min: 0, max: 15, palette: ['white','brown','red','yellow','green']},'CHM 2017');
+
+///////////////////////////////////////////////////////////////////////////////////////// 4.4
+
+// Make a tree polygon... measure its height in 2017
+var CHM2017_mean = CHM2017.reduceRegion({
+    reducer: ee.Reducer.mean(),
+    geometry: tree,
+    scale: 2,
+  });
+  
+print('Height of the selected tree in 2017  (m):', CHM2017_mean.getNumber('band001'));
+
+// Section 5
+
+///////////////////////////////////////////////////////////////////////////////////////// 5
+
+// Read in Digital Terrain Model/Images for for year 2019 (using .filterMetadata by Type)
+var DTMimages_2019 =  ee.ImageCollection('projects/neon/DP3-30024-001_DEM')
+  .filterBounds(region)
+  .filterDate('2019-01-01', '2019-12-31')
+  .filterMetadata('Type','equals','DTM')
+
+// Read in Digital Terrain Model/Images for the year 2019 (using .filterMetadata by Type)
+var DTMimages_2019 =  ee.ImageCollection('projects/neon/DP3-30024-001_DEM')
+  .filterBounds(region)
+  .filterDate('2019-01-01', '2019-12-31')
+  .filterMetadata('Type','equals','DTM')
+  
+// Get the first layer and clip the study region
+var DTMimage_2019 = DTMimages_2019.first().clip(region);
+
+// Visualize the DTM
+Map.centerObject(region,15);
+Map.addLayer(DTMimage_2019, {min: 1900, max:2100}, 'DTM');
+
+// Read in Digital Surface Model/Images for the year 2019 (using .filterMetadata by Type)
+var DSMimages_2019 =  ee.ImageCollection('projects/neon/DP3-30024-001_DEM')
+  .filterBounds(region)
+  .filterDate('2019-01-01', '2019-12-31')
+  .filterMetadata('Type','equals','DSM')
+
+// Get the first layer and clip the study region
+var DSMimage_2019 = DSMimages_2019.first().clip(region);  
+
+// Visualize the DSM layer
+Map.centerObject(region,15);
+Map.addLayer(DSMimage_2019, {min: 1900, max:2100}, 'DSM');  
+
+// Subtract Digital DTM from DSM to derive the canopy height model (CHM)
+var CHM2019 = DSMimage_2019.subtract(DTMimage_2019);
+
+// visualize the DSM, DTM, and CHM for the year 2019
+Map.centerObject(region,15);
+Map.addLayer(CHM2019, {min: 0, max: 15, palette: ['white','brown','red','yellow','green']},'CHM 2019');
+
+///////////////////////////////////////////////////////////////////////////////////////// 5.1
+
+// Make a tree polygon... measure its height in 2019
+var CHM2019_mean = CHM2019.reduceRegion({
+    reducer: ee.Reducer.mean(),
+    geometry: tree,
+    scale: 2,
+  });
+  
+print('Height of the selected tree in 2019  (m):', CHM2019_mean.getNumber('band001'));
+
+///////////////////////////////////////////////////////////////////////////////////////// 5.2
+
+// Subtract CHM from 2019 and 2017 to extract change in canopy height from 2017 to 2019
+var CHM_difference_map = CHM2019.subtract(CHM2017);
+Map.addLayer(CHM_difference_map, {min: -1, max: 1, palette: ['white','brown','red','yellow','green']},'CHM diff 2021-2018')
+
+// Get the change in canopy height value for the study tree
+var CHM_difference_tree= CHM_difference_map.reduceRegion({
+    reducer: ee.Reducer.mean(),
+    geometry: tree,
+    scale: 2,
+  });
+  
+// Print the change in canopy height value for the study tree
+print('Height change of the selected tree from 2017 to 2019 (m):', CHM_difference_tree.getNumber('band001'));
