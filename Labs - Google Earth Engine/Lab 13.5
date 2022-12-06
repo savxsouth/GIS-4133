@@ -1,0 +1,124 @@
+/**** Start of imports. If edited, may not auto-convert in the playground. ****/
+var clark = ee.FeatureCollection("users/onlynishan/clarkNV_county"),
+    NLCDCollection = ee.ImageCollection("USGS/NLCD_RELEASES/2019_REL/NLCD");
+/***** End of imports. If edited, may not auto-convert in the playground. *****/
+// Lab 13, Section 5
+
+
+////////////////////////////////////////////////////////////////////////////////// 5.1
+
+// Select urban and residential areas from the NLCD land cover map in 2019
+var nlcd2019 = NLCDCollection.filter(ee.Filter.eq('system:index', '2019'))
+        .first()
+        .select('landcover')
+        .clip(clark);
+
+// Create a binary layer containing urban and residential areas as value 1 and others as 0
+// Note that a value of 21-24 is used for urban and residential areas in the NLCD maps
+var urban2019 =nlcd2019.gte(21).and(nlcd2019.lte(24)); // urban and residential areas pixels in 2019
+Map.centerObject(clark,8);
+Map.addLayer(urban2019, {min:0, max:1, palette: ['white','blue']}, 'Urban Area in 2019');
+
+///////////////////////////////////////////////////////////////////////////////////// 5.2
+
+// Select urban from NLCD land cover map in 2019
+var nlcd2001 = NLCDCollection.filter(ee.Filter.eq('system:index', '2001'))
+        .first()
+        .select('landcover')
+        .clip(clark);
+
+// Create a binary layer containing urban as value 1 and others as 0
+// Note that a value of 21-24 is used for urban in the NLCD maps        
+var urban2001 =nlcd2001.gte(21).and(nlcd2001.lte(24)); // urban pixels in 2001
+Map.addLayer(urban2001, {min:0, max:1, palette: ['white','blue']}, 'Urban Area in 2001');
+
+///////////////////////////////////////////////////////////////////////////////////// 5.3
+
+// Multiply urban2019 layer by 10 and add with urban2001 layer. This will create a 
+// new raster with 4 unique values
+
+// 0 = No change in non-urban pixels,  1 = Loss of urban area from 2001 to 2019,
+// 10 = Urban Area gain (new areas with urban in 2019), 11 = No change in urban pixel 
+//      (urban in 2001 and 2019)
+
+var urban_change = urban2019.multiply(10).add(urban2001);
+
+///////////////////////////////////////////////////////////////////////////////////// 5.4
+
+var urban_change = urban_change
+      .where(urban_change.eq(0), 0) // No change in non-urban area
+      .where(urban_change.eq(1), 1) // Loss in urban area
+      .where(urban_change.eq(10), 2) // Gain in urban area
+      .where(urban_change.eq(11), 3) // No change in urban area
+      .rename('urbanarea_change')
+  
+// Display the change detection map
+
+Map.addLayer(urban_change, {min:0, max:3,palette: ['white','red','purple','blue']}, 'Urban Area change');
+
+///////////////////////////////////////////////////////////////////////////////////// 5.5
+
+// Get the area of pixels. Divide by 1000000 to get the area in sq. km. Divide it 
+// by 18 to calculate the area per year (rate of change) Add the urban area change band to it.
+
+// This will create a two band image, band 1 = area of pixel and band 2 = change 
+// detection map
+
+var areaImage = ee.Image.pixelArea().divide(1000000).divide(18).addBands(urban_change);
+
+///////////////////////////////////////////////////////////////////////////////////// 5.6
+
+// Calculate Area by each class in urban_change layer (i.e., 0,1,2,3)
+// Use a Grouped Reducer
+var areas = areaImage.reduceRegion({
+      reducer: ee.Reducer.sum().group({
+      groupField: 1, // first band (0) is area, second band (1) = urban area change
+      groupName: 'urbanarea_change',
+      }),
+    geometry: clark,
+    scale: 30,
+    maxPixels: 1e10
+    }); 
+
+// Generate a clean output, return output (change in km^2/year for each class) in Dictionary
+var classAreas = ee.List(areas.get('groups'));
+var classAreaLists = classAreas.map(function(item) {
+      var areaDict = ee.Dictionary(item)
+      var classNumber = ee.Number(areaDict.get('urbanarea_change')).format()
+      var area = ee.Number(areaDict.get('sum')).round()
+      return ee.List([classNumber, area])
+    })
+
+var classurbanarea_changeAreaDict = ee.Dictionary(classAreaLists.flatten());
+print(classurbanarea_changeAreaDict);
+
+///////////////////////////////////////////////////////////////////////////////////// 5.7
+
+//Display the same output in chart
+var areaChart = ui.Chart.image.byClass({
+  image: areaImage,
+  classBand: 'urbanarea_change', 
+  region: clark,
+  scale: 100,
+  reducer: ee.Reducer.sum(),
+  classLabels: ['No change in non-urban pixels',  'Loss of urban area from 2001 to 2019', 'new areas with urban in 2019', 'No change in urban area'],
+}).setOptions({
+  hAxis: {title: 'Classes'},
+  vAxis: {title: 'Area (Km^2) per year'},
+  title: 'Area by class',
+  series: {
+    0: { color: 'gray' },
+    1: { color: 'red' },
+    2: { color: 'purple' },
+    3: { color: 'blue' }
+  }
+});
+print(areaChart);
+
+///////////////////////////////////////////////////////////////////////////////////// 5 - Q1
+
+// Net loss in urban surface area is around 16 km^2
+
+
+
+

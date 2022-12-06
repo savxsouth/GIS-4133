@@ -1,0 +1,130 @@
+/**** Start of imports. If edited, may not auto-convert in the playground. ****/
+var roi = 
+    /* color: #ffc82d */
+    /* shown: false */
+    /* displayProperties: [
+      {
+        "type": "rectangle"
+      }
+    ] */
+    ee.Geometry.Polygon(
+        [[[-97.87850684985109, 35.777101789726714],
+          [-97.87850684985109, 34.98438460011084],
+          [-97.02981300219484, 34.98438460011084],
+          [-97.02981300219484, 35.777101789726714]]], null, false),
+    L8Collection = ee.ImageCollection("LANDSAT/LC08/C02/T1_L2"),
+    NLCDCollection = ee.ImageCollection("USGS/NLCD_RELEASES/2019_REL/NLCD"),
+    water = 
+    /* color: #0015d6 */
+    /* shown: false */
+    /* displayProperties: [
+      {
+        "type": "rectangle"
+      }
+    ] */
+    ee.Geometry.Polygon(
+        [[[-97.60299033984153, 35.5739367536239],
+          [-97.60299033984153, 35.56555890931226],
+          [-97.58994407519309, 35.56555890931226],
+          [-97.58994407519309, 35.5739367536239]]], null, false);
+/***** End of imports. If edited, may not auto-convert in the playground. *****/
+
+// Lab 14 Urban Heat Island (in-class activity).
+
+///////////////////////////////////////////////////////////////////////// 4.3
+
+var l8image = ee.Image(L8Collection
+  .filterBounds(roi)
+  .filterDate('2022-06-01', '2022-08-31')
+  .sort('CLOUD_COVER')
+  .first());
+
+///////////////////////////////////////////////////////////////////////// 4.4
+
+// Clip the image 
+var l8image = l8image.clip(roi);
+// Define true-color visualization parameters for SR image.
+var tc_sr = {
+  bands: ['SR_B4', 'SR_B3', 'SR_B2'],
+  min: 1000,
+  max: 30000
+};
+
+Map.centerObject(roi,10);
+Map.addLayer(l8image , tc_sr, 'Landsat 8 true color image');
+
+
+///////////////////////////////////////////////////////////////////////// 4.5
+
+// Scale Landsat thermal bands to Kelvin and convert to F
+var L8_lstK = l8image.select('ST_B10').multiply(0.00341802).add(149.0);
+var L8_lstF = L8_lstK.subtract(273.15).multiply(1.8).add(32);
+Map.addLayer(L8_lstF,{min: 60, max: 125, palette: ['darkblue','blue', 'yellow', 'red','darkred']}, 'LST in F');
+
+///////////////////////////////////////////////////////////////////////// 4.6
+
+// Select the 2019 NLCD land cover map For the study region
+var nlcd2019 = NLCDCollection.filter(ee.Filter.eq('system:index', '2019'))        
+        .first()
+        .select('landcover')
+        .clip(roi);
+
+// Create 2019 binary urban classes for the study region    
+var urban2019 =nlcd2019.gte(21).and(nlcd2019.lte(24));
+
+///////////////////////////////////////////////////////////////////////// 4.7
+
+// Calculate the mean LST of water
+var water_lstmean = L8_lstF.reduceRegion({
+    reducer: ee.Reducer.mean(),
+    geometry: water,
+    scale: 30
+  });
+  
+print(water_lstmean);
+var water_lstmean = ee.Number(water_lstmean.get('ST_B10'));
+
+///////////////////////////////////////////////////////////////////////// 4.8
+
+// Get the difference between LST and mean LST from nearby water bodies
+var lst_diff = L8_lstF.subtract(water_lstmean);
+
+// Ignore the difference in LST (LST values - mean water LST) values from non-urban areas
+var lst_diff = lst_diff.multiply(urban2019) // multiply by binary urban layer
+Map.addLayer(lst_diff,{min: -10, max: 60, palette: ['darkblue','blue', 'yellow', 'red','darkred']}, 'LST in F');
+
+
+Map.addLayer(lst_diff,{min: -10, max: 60, palette: ['darkblue','blue', 'yellow', 'red','darkred']}, 'LST in F');
+
+///////////////////////////////////////////////////////////////////////// 4.9
+
+// Get the highest 90% difference in LST-water LST
+var high_lst = lst_diff.reduceRegion(ee.Reducer.percentile([90]), roi, 30)
+print(high_lst)
+var high_lst = ee.Number(high_lst.get('ST_B10'));
+
+// Select hottest area
+var hottest_area = lst_diff.gte(high_lst);
+
+Map.addLayer(hottest_area,{min: 0, max: 1, palette: ['white','red']}, 'Urban heat Island');
+
+///////////////////////////////////////////////////////////////////////// 4.10
+
+// Get existing Urban Heat Index product from Yale
+var yale_uhi = ee.ImageCollection("YALE/YCEO/UHI/Summer_UHI_yearly_pixel/v4")
+
+// var yale_uhi = yale_uhi.select('Daytime')
+print(yale_uhi)
+var visualization = {
+  bands: ['Daytime'],
+  min: -1.5,
+  max: 7.5,
+  palette: [
+    "#313695","#74add1","#fed976","#feb24c","#fd8d3c","#fc4e2a",
+    "#e31a1c","#b10026",
+  ]
+};
+
+Map.addLayer(yale_uhi, visualization, "Daytime UHI - Yale");
+
+///////////////////////////////////////////////////////////////////////// 

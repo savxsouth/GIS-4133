@@ -1,0 +1,132 @@
+/**** Start of imports. If edited, may not auto-convert in the playground. ****/
+var roi = 
+    /* color: #d63000 */
+    /* displayProperties: [
+      {
+        "type": "rectangle"
+      }
+    ] */
+    ee.Geometry.Polygon(
+        [[[-113.49756467732547, 41.85710648027892],
+          [-113.49756467732547, 40.60125650983299],
+          [-111.69031370076297, 40.60125650983299],
+          [-111.69031370076297, 41.85710648027892]]], null, false),
+    NLCDCollection = ee.ImageCollection("USGS/NLCD_RELEASES/2019_REL/NLCD");
+/***** End of imports. If edited, may not auto-convert in the playground. *****/
+// Lab 13, Section 4.
+
+///////////////////////////////////////////////////////////////////////////////////// 4.1
+
+// Select water from the NLCD land cover map in 2019
+var nlcd2019 = NLCDCollection.filter(ee.Filter.eq('system:index', '2019'))
+        .first()
+        .select('landcover')
+        .clip(roi);
+
+// Create a binary layer containing water as value 1 and others as 0
+// Note that a value of 11 is used for water in the NLCD maps
+var water2019 = nlcd2019.eq(11);// water pixels in 2019
+Map.centerObject(roi,8);
+Map.addLayer(water2019, {min:0, max:1, palette: ['white','blue']}, 'Water in 2019');
+
+///////////////////////////////////////////////////////////////////////////////////// 4.2
+
+// Select water from NLCD land cover map in 2019
+var nlcd2001 = NLCDCollection.filter(ee.Filter.eq('system:index', '2001'))
+        .first()
+        .select('landcover')
+        .clip(roi);
+
+// Create a binary layer containing water as value 1 and others as 0
+// Note that a value of 11 is used for water in the NLCD maps        
+var water2001 = nlcd2001.eq(11); // water pixels in 2001
+Map.addLayer(water2001, {min:0, max:1, palette: ['white','blue']}, 'Water in 2001');
+
+///////////////////////////////////////////////////////////////////////////////////// 4.3
+
+// Multiply water2019 layer by 10 and add with water2001 layer. This will create a 
+// new raster with 4 unique values
+
+// 0 = No change in non-water pixels,  1 = Loss of water area from 2001 to 2019,
+// 10 = Water gain (new areas with water in 2019), 11 = No change in water pixel 
+//      (water in 2001 and 2019)
+
+var water_change = water2019.multiply(10).add(water2001);
+
+///////////////////////////////////////////////////////////////////////////////////// 4.4
+
+var water_change = water_change
+      .where(water_change.eq(0), 0) // No change in non-water area
+      .where(water_change.eq(1), 1) // Loss in water area
+      .where(water_change.eq(10), 2) // Gain in water area
+      .where(water_change.eq(11), 3) // No change in water
+      .rename('waterarea_change')
+  
+// Display the change detection map
+
+Map.addLayer(water_change, {min:0, max:3,palette: ['white','red','purple','blue']}, 'Water change');
+
+///////////////////////////////////////////////////////////////////////////////////// 4.5
+
+// Get the area of pixels. Divide by 1000000 to get the area in sq. km. Divide it 
+// by 18 to calculate the area per year (rate of change) Add the water change band to it.
+
+// This will create a two band image, band 1 = area of pixel and band 2 = change 
+// detection map
+
+var areaImage = ee.Image.pixelArea().divide(1000000).divide(18).addBands(water_change);
+
+///////////////////////////////////////////////////////////////////////////////////// 4.6
+
+// Calculate Area by each class in water_change layer (i.e., 0,1,2,3)
+// Use a Grouped Reducer
+var areas = areaImage.reduceRegion({
+      reducer: ee.Reducer.sum().group({
+      groupField: 1, // first band (0) is area, second band (1) = water area change
+      groupName: 'waterarea_change',
+      }),
+    geometry: roi,
+    scale: 30,
+    maxPixels: 1e10
+    }); 
+
+// Generate a clean output, return output (change in km^2/year for each class) in Dictionary
+var classAreas = ee.List(areas.get('groups'));
+var classAreaLists = classAreas.map(function(item) {
+      var areaDict = ee.Dictionary(item)
+      var classNumber = ee.Number(areaDict.get('waterarea_change')).format()
+      var area = ee.Number(areaDict.get('sum')).round()
+      return ee.List([classNumber, area])
+    })
+
+var classwaterarea_changeAreaDict = ee.Dictionary(classAreaLists.flatten());
+print(classwaterarea_changeAreaDict);
+
+///////////////////////////////////////////////////////////////////////////////////// 4.7
+
+//Display the same output in chart
+var areaChart = ui.Chart.image.byClass({
+  image: areaImage,
+  classBand: 'waterarea_change', 
+  region: roi,
+  scale: 100,
+  reducer: ee.Reducer.sum(),
+  classLabels: ['No change in non-water pixels',  'Loss of water area from 2001 to 2019', 'new areas with water in 2019', 'No change in water'],
+}).setOptions({
+  hAxis: {title: 'Classes'},
+  vAxis: {title: 'Area (Km^2) per year'},
+  title: 'Area by class',
+  series: {
+    0: { color: 'gray' },
+    1: { color: 'red' },
+    2: { color: 'purple' },
+    3: { color: 'blue' }
+  }
+});
+print(areaChart);
+
+///////////////////////////////////////////////////////////////////////////////////// 4.8
+
+// Net loss in water surface area is around 66 km^2
+// 77 km^2 lost (red) & 11 km^2 gained (purple)
+
